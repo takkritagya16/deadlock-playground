@@ -4,7 +4,7 @@ public class Resource {
     private final String id;
     private final String name;
     private final int total;
-    private final int available;
+    private int available;
     private final boolean shareable;
 
     public Resource(String id, int total, boolean shareable) {
@@ -40,5 +40,26 @@ public class Resource {
 
     public boolean getShareable() {
         return shareable;
+    }
+
+    public boolean grant(int n) {
+        if (n <= 0) {
+            throw new IllegalArgumentException("Grant count must be greater than zero");
+        }
+        if (n <= available) {
+            available -= n;
+            return true;
+        }
+        return false;
+    }
+
+    public void release(int n) {
+        if (n <= 0) {
+            throw new IllegalArgumentException("Release count must be greater than zero");
+        }
+        if (available + n > total) {
+            throw new IllegalStateException("Releasing instances would exceed total instances");
+        }
+        available += n;
     }
 }

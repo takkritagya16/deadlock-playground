@@ -75,4 +75,109 @@ class ResourceTest {
         );
         assertEquals(expected, names);
     }
+
+    @Test
+    void grantingWithinAvailableReturnsTrueAndReducesAvailable() {
+        Resource resource = new Resource("R1", 5, false);
+        assertTrue(resource.grant(2));
+        assertEquals(3, resource.getAvailable());
+        assertTrue(resource.grant(3));
+        assertEquals(0, resource.getAvailable());
+    }
+
+    @Test
+    void grantingMoreThanAvailableReturnsFalseAndLeavesAvailableUnchanged() {
+        Resource resource = new Resource("R1", 3, false);
+        assertFalse(resource.grant(4));
+        assertEquals(3, resource.getAvailable());
+
+        assertTrue(resource.grant(2));
+        assertEquals(1, resource.getAvailable());
+
+        assertFalse(resource.grant(2));
+        assertEquals(1, resource.getAvailable());
+    }
+
+    @Test
+    void grantingZeroOrNegativeCountThrowsIllegalArgumentException() {
+        Resource resource = new Resource("R1", 3, false);
+        assertThrows(IllegalArgumentException.class, () -> resource.grant(0));
+        assertEquals(3, resource.getAvailable());
+
+        assertThrows(IllegalArgumentException.class, () -> resource.grant(-1));
+        assertEquals(3, resource.getAvailable());
+    }
+
+    @Test
+    void releasingReturnsInstancesAndIncreasesAvailable() {
+        Resource resource = new Resource("R1", 4, false);
+        assertTrue(resource.grant(3));
+        assertEquals(1, resource.getAvailable());
+
+        resource.release(2);
+        assertEquals(3, resource.getAvailable());
+
+        resource.release(1);
+        assertEquals(4, resource.getAvailable());
+    }
+
+    @Test
+    void releasingPastTotalThrowsIllegalStateExceptionAndLeavesAvailableUnchanged() {
+        Resource resource = new Resource("R1", 4, false);
+        assertThrows(IllegalStateException.class, () -> resource.release(1));
+        assertEquals(4, resource.getAvailable());
+
+        assertTrue(resource.grant(2));
+        assertEquals(2, resource.getAvailable());
+
+        assertThrows(IllegalStateException.class, () -> resource.release(3));
+        assertEquals(2, resource.getAvailable());
+    }
+
+    @Test
+    void releasingZeroOrNegativeCountThrowsIllegalArgumentException() {
+        Resource resource = new Resource("R1", 4, false);
+        assertTrue(resource.grant(2));
+        assertEquals(2, resource.getAvailable());
+
+        assertThrows(IllegalArgumentException.class, () -> resource.release(0));
+        assertEquals(2, resource.getAvailable());
+
+        assertThrows(IllegalArgumentException.class, () -> resource.release(-1));
+        assertEquals(2, resource.getAvailable());
+    }
+
+    @Test
+    void availableAlwaysStaysBetweenZeroAndTotalAcrossGrantsAndReleases() {
+        Resource resource = new Resource("R1", 5, false);
+        assertTrue(resource.getAvailable() >= 0 && resource.getAvailable() <= resource.getTotal());
+
+        assertTrue(resource.grant(2));
+        assertTrue(resource.getAvailable() >= 0 && resource.getAvailable() <= resource.getTotal());
+
+        assertTrue(resource.grant(3));
+        assertEquals(0, resource.getAvailable());
+        assertTrue(resource.getAvailable() >= 0 && resource.getAvailable() <= resource.getTotal());
+
+        assertFalse(resource.grant(1));
+        assertEquals(0, resource.getAvailable());
+        assertTrue(resource.getAvailable() >= 0 && resource.getAvailable() <= resource.getTotal());
+
+        resource.release(2);
+        assertTrue(resource.getAvailable() >= 0 && resource.getAvailable() <= resource.getTotal());
+
+        resource.release(3);
+        assertEquals(5, resource.getAvailable());
+        assertTrue(resource.getAvailable() >= 0 && resource.getAvailable() <= resource.getTotal());
+
+        assertThrows(IllegalStateException.class, () -> resource.release(1));
+        assertEquals(5, resource.getAvailable());
+        assertTrue(resource.getAvailable() >= 0 && resource.getAvailable() <= resource.getTotal());
+
+        assertTrue(resource.grant(4));
+        assertTrue(resource.getAvailable() >= 0 && resource.getAvailable() <= resource.getTotal());
+
+        resource.release(2);
+        assertTrue(resource.getAvailable() >= 0 && resource.getAvailable() <= resource.getTotal());
+    }
 }
