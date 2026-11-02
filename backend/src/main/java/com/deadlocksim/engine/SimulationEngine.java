@@ -1,6 +1,7 @@
 package com.deadlocksim.engine;
 
 import com.deadlocksim.model.EventType;
+import com.deadlocksim.model.Graph;
 import com.deadlocksim.model.Operation;
 import com.deadlocksim.model.OperationType;
 import com.deadlocksim.model.Process;
@@ -10,8 +11,14 @@ import com.deadlocksim.model.SafetyChecker;
 import com.deadlocksim.model.SafetyResult;
 import com.deadlocksim.model.Scenario;
 import com.deadlocksim.model.Snapshot;
+import com.deadlocksim.model.detection.BankersDetection;
+import com.deadlocksim.model.detection.CycleDetection;
+import com.deadlocksim.model.detection.DetectionResult;
 import com.deadlocksim.model.history.History;
 import com.deadlocksim.model.history.HistoryEvent;
+import com.deadlocksim.model.recovery.Preempt;
+import com.deadlocksim.model.recovery.Terminate;
+import com.deadlocksim.model.victim.VictimPolicy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -211,14 +218,6 @@ public class SimulationEngine {
         return unblocked;
     }
 
-    private boolean isShared() {
-        return scenario != null && scenario.getPreventionToggles().isMutualExclusion();
-    }
-
-    public Scenario getScenario() {
-        return scenario;
-    }
-
     public StepResult step() {
         if (scenario == null) {
             throw new IllegalStateException("No scenario loaded");
@@ -275,6 +274,121 @@ public class SimulationEngine {
                 .allMatch(p -> p.getNextOperationIndex() >= scenario.getOperations(p.getId()).size());
 
         return new StepResult(description, finished);
+    }
+
+    public DetectReport detect() {
+        if (scenario == null) {
+            throw new IllegalStateException("No scenario loaded");
+        }
+        boolean hasWaiting = scenario.getProcesses().stream().anyMatch(Process::isWaiting);
+        if (!hasWaiting) {
+            throw new IllegalStateException("No waiting process to check");
+        }
+
+        boolean allSingle = scenario.getResources().stream().allMatch(r -> r.getTotal() == 1);
+        String strategyName = allSingle ? "CYCLE" : "BANKERS";
+        Graph g = new Graph(scenario);
+        DetectionResult result = allSingle
+                ? new CycleDetection().detect(g)
+                : new BankersDetection().detect(g);
+
+        String desc = result.isDeadlocked()
+                ? "Deadlock detected: " + result.getProcessIds()
+                : "No deadlock detected";
+        history.add(EventType.DETECT, desc, Snapshot.capture(scenario));
+
+        return new DetectReport(strategyName, result);
+    }
+
+    public RecoveryReport recover(VictimPolicy policy, boolean usePreempt) {
+        if (scenario == null) {
+            throw new IllegalStateException("No scenario loaded");
+        }
+        if (policy == null) {
+            throw new IllegalArgumentException("Victim policy must not be null");
+        }
+
+        DetectReport initialReport = detect();
+        if (!initialReport.result().isDeadlocked()) {
+            throw new IllegalStateException("No deadlock to recover from");
+        }
+
+        List<RecoveryRound> rounds = new ArrayList<>();
+        DetectionResult currentResult = initialReport.result();
+        int maxRounds = scenario.getProcesses().size();
+        int roundCount = 0;
+        boolean resolved = false;
+
+        while (!currentResult.getProcessIds().isEmpty()) {
+            if (roundCount >= maxRounds) {
+                history.add(EventType.RESOLVED, "Recovery failed", Snapshot.capture(scenario));
+                break;
+            }
+            roundCount++;
+
+            List<String> deadlockedIds = currentResult.getProcessIds();
+            List<Process> deadlockedProcesses = new ArrayList<>();
+            for (Process p : scenario.getProcesses()) {
+                if (deadlockedIds.contains(p.getId())) {
+                    deadlockedProcesses.add(p);
+                }
+            }
+            Process victim = policy.selectVictim(deadlockedProcesses);
+            history.add(EventType.VICTIM_SELECTED, "Victim selected: " + victim.getId(), Snapshot.capture(scenario));
+
+            String strategyName;
+            if (usePreempt) {
+                if (!scenario.getPreventionToggles().isNoPreemption()) {
+                    throw new IllegalStateException("Preemption is disabled");
+                }
+                strategyName = "PREEMPT";
+                String resId = victim.getHeld().keySet().stream()
+                        .min(String::compareTo)
+                        .orElseThrow(() -> new IllegalStateException("Victim holds no resources to preempt"));
+                new Preempt(resId).apply(scenario, victim);
+                history.add(EventType.PREEMPT, "Preempted resource " + resId + " from victim " + victim.getId(), Snapshot.capture(scenario));
+                history.add(EventType.ROLLBACK, "Rolled back victim " + victim.getId(), Snapshot.capture(scenario));
+            } else {
+                strategyName = "TERMINATE";
+                new Terminate().apply(scenario, victim);
+                history.add(EventType.TERMINATE, "Terminated victim " + victim.getId(), Snapshot.capture(scenario));
+            }
+
+            wakeWaitingProcesses();
+
+            boolean hasWaiting = scenario.getProcesses().stream().anyMatch(Process::isWaiting);
+            DetectReport nextReport;
+            if (!hasWaiting) {
+                for (Process p : scenario.getProcesses()) {
+                    p.setDeadlocked(false);
+                }
+                boolean allSingle = scenario.getResources().stream().allMatch(r -> r.getTotal() == 1);
+                history.add(EventType.DETECT, "No deadlock detected", Snapshot.capture(scenario));
+                nextReport = new DetectReport(allSingle ? "CYCLE" : "BANKERS", DetectionResult.none());
+            } else {
+                nextReport = detect();
+            }
+
+            currentResult = nextReport.result();
+            boolean roundResolved = !currentResult.isDeadlocked();
+            rounds.add(new RecoveryRound(victim.getId(), strategyName, roundResolved));
+
+            if (roundResolved) {
+                history.add(EventType.RESOLVED, "Deadlock resolved", Snapshot.capture(scenario));
+                resolved = true;
+                break;
+            }
+        }
+
+        return new RecoveryReport(rounds, resolved);
+    }
+
+    private boolean isShared() {
+        return scenario != null && scenario.getPreventionToggles().isMutualExclusion();
+    }
+
+    public Scenario getScenario() {
+        return scenario;
     }
 
     public List<HistoryEvent> getHistoryEvents() {
