@@ -11,6 +11,7 @@ public class Scenario {
     private final List<Resource> resources;
     private final List<Process> processes;
     private final Map<String, List<Operation>> operations;
+    private PreventionToggles preventionToggles;
 
     public Scenario(String name) {
         if (name == null || name.isBlank()) {
@@ -20,10 +21,22 @@ public class Scenario {
         this.resources = new ArrayList<>();
         this.processes = new ArrayList<>();
         this.operations = new LinkedHashMap<>();
+        this.preventionToggles = new PreventionToggles();
     }
 
     public String getName() {
         return name;
+    }
+
+    public PreventionToggles getPreventionToggles() {
+        return preventionToggles.copy();
+    }
+
+    public void setPreventionToggles(PreventionToggles t) {
+        if (t == null) {
+            throw new IllegalArgumentException("PreventionToggles must not be null");
+        }
+        this.preventionToggles = t.copy();
     }
 
     public void addResource(Resource r) {

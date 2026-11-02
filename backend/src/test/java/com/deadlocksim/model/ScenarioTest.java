@@ -118,4 +118,41 @@ class ScenarioTest {
         assertThrows(UnsupportedOperationException.class, () ->
                 scenario.getOperations("P1").add(new Operation("P1", OperationType.RELEASE, "R1", 1)));
     }
+
+    @Test
+    void scenarioStartsAllTogglesOff() {
+        Scenario scenario = new Scenario("Toggles Off");
+        PreventionToggles toggles = scenario.getPreventionToggles();
+        assertFalse(toggles.isMutualExclusion());
+        assertFalse(toggles.isHoldAndWait());
+        assertFalse(toggles.isNoPreemption());
+        assertFalse(toggles.isCircularWait());
+    }
+
+    @Test
+    void setPreventionTogglesNullThrowsIllegalArgumentException() {
+        Scenario scenario = new Scenario("Test Scenario");
+        assertThrows(IllegalArgumentException.class, () -> scenario.setPreventionToggles(null));
+    }
+
+    @Test
+    void scenarioTogglesUnaffectedWhenCallerChangesObjectPassedIn() {
+        Scenario scenario = new Scenario("Test Scenario");
+        PreventionToggles toggles = new PreventionToggles();
+        toggles.setMutualExclusion(true);
+        scenario.setPreventionToggles(toggles);
+
+        toggles.setHoldAndWait(true);
+        assertTrue(scenario.getPreventionToggles().isMutualExclusion());
+        assertFalse(scenario.getPreventionToggles().isHoldAndWait());
+    }
+
+    @Test
+    void scenarioTogglesUnaffectedWhenCallerChangesReturnedCopy() {
+        Scenario scenario = new Scenario("Test Scenario");
+        PreventionToggles toggles = scenario.getPreventionToggles();
+        toggles.setCircularWait(true);
+
+        assertFalse(scenario.getPreventionToggles().isCircularWait());
+    }
 }
