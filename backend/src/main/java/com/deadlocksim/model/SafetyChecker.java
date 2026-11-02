@@ -39,8 +39,16 @@ public final class SafetyChecker {
             return SafetyResult.unsafe("Insufficient available instances of resource " + resourceId, Collections.emptyList());
         }
 
+        boolean wasWaiting = process.isWaiting();
+        String prevWaitRes = process.getWaitingResourceId();
+        int prevWaitCount = process.getWaitingCount();
+
         resource.grant(count);
         process.holdInstances(resourceId, count);
+        if (wasWaiting && resourceId.equals(prevWaitRes) && count >= prevWaitCount) {
+            process.clearWaitingFor();
+        }
+
         try {
             Map<String, Integer> work = new HashMap<>();
             for (Resource r : s.getResources()) {
@@ -57,6 +65,9 @@ public final class SafetyChecker {
         } finally {
             process.releaseInstances(resourceId, count);
             resource.release(count);
+            if (wasWaiting && resourceId.equals(prevWaitRes) && count >= prevWaitCount) {
+                process.setWaitingFor(prevWaitRes, prevWaitCount);
+            }
         }
     }
 

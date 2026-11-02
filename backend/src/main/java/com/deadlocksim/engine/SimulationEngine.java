@@ -1,6 +1,8 @@
 package com.deadlocksim.engine;
 
 import com.deadlocksim.model.EventType;
+import com.deadlocksim.model.Operation;
+import com.deadlocksim.model.OperationType;
 import com.deadlocksim.model.Process;
 import com.deadlocksim.model.ProcessState;
 import com.deadlocksim.model.Resource;
@@ -215,6 +217,64 @@ public class SimulationEngine {
 
     public Scenario getScenario() {
         return scenario;
+    }
+
+    public StepResult step() {
+        if (scenario == null) {
+            throw new IllegalStateException("No scenario loaded");
+        }
+
+        Process targetProcess = null;
+        List<Operation> targetOps = null;
+        for (Process p : scenario.getProcesses()) {
+            List<Operation> ops = scenario.getOperations(p.getId());
+            if (p.getState() == ProcessState.RUNNING && p.getNextOperationIndex() < ops.size()) {
+                targetProcess = p;
+                targetOps = ops;
+                break;
+            }
+        }
+
+        if (targetProcess == null) {
+            boolean allFinished = scenario.getProcesses().stream()
+                    .allMatch(p -> p.getNextOperationIndex() >= scenario.getOperations(p.getId()).size());
+            if (allFinished) {
+                return new StepResult("Scenario finished", true);
+            } else {
+                return new StepResult("No runnable process; deadlock or waiting", false);
+            }
+        }
+
+        Operation op = targetOps.get(targetProcess.getNextOperationIndex());
+        String description;
+
+        if (op.getType() == OperationType.REQUEST) {
+            RequestResult rr = request(targetProcess.getId(), op.getResourceId(), op.getCount());
+            if (rr.outcome() == RequestOutcome.GRANTED) {
+                targetProcess.advanceOperation();
+                description = targetProcess.getId() + " requested and was granted " + op.getCount() + " of " + op.getResourceId();
+            } else {
+                description = targetProcess.getId() + " request " + op.getResourceId() + " (" + op.getCount() + "): " + rr.outcome();
+            }
+        } else {
+            release(targetProcess.getId(), op.getResourceId(), op.getCount());
+            targetProcess.advanceOperation();
+            description = targetProcess.getId() + " released " + op.getCount() + " of " + op.getResourceId();
+        }
+
+        for (Process p : scenario.getProcesses()) {
+            if (p.getState() == ProcessState.RUNNING
+                    && p.getNextOperationIndex() >= scenario.getOperations(p.getId()).size()
+                    && !p.isWaiting()) {
+                p.setState(ProcessState.COMPLETED);
+                history.add(EventType.STATE_CHANGE, p.getId() + " completed", Snapshot.capture(scenario));
+            }
+        }
+
+        boolean finished = scenario.getProcesses().stream()
+                .allMatch(p -> p.getNextOperationIndex() >= scenario.getOperations(p.getId()).size());
+
+        return new StepResult(description, finished);
     }
 
     public List<HistoryEvent> getHistoryEvents() {
