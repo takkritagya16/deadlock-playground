@@ -6,6 +6,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -102,6 +103,41 @@ class SnapshotTest {
     }
 
     @Test
+    void snapshotCapturedWhileWaitingRestoresWaitingStateAfterScenarioChanges() {
+        Scenario scenario = new Scenario("Test Scenario");
+        Resource r1 = new Resource("R1", 3, false);
+        Resource r2 = new Resource("R2", 3, false);
+        Process p1 = new Process("P1", 1);
+        Process p2 = new Process("P2", 2);
+
+        p1.setWaitingFor("R1", 2);
+
+        scenario.addResource(r1);
+        scenario.addResource(r2);
+        scenario.addProcess(p1);
+        scenario.addProcess(p2);
+
+        Snapshot snapshot = Snapshot.capture(scenario);
+        assertEquals("R1", snapshot.getProcessWaitingResource().get("P1"));
+        assertEquals(2, snapshot.getProcessWaitingCount().get("P1"));
+
+        p1.clearWaitingFor();
+        p2.setWaitingFor("R2", 1);
+        assertFalse(p1.isWaiting());
+        assertTrue(p2.isWaiting());
+
+        snapshot.restoreInto(scenario);
+
+        assertTrue(p1.isWaiting());
+        assertEquals("R1", p1.getWaitingResourceId());
+        assertEquals(2, p1.getWaitingCount());
+
+        assertFalse(p2.isWaiting());
+        assertNull(p2.getWaitingResourceId());
+        assertEquals(0, p2.getWaitingCount());
+    }
+
+    @Test
     void restoreIntoWithMismatchedScenarioThrowsIllegalArgumentException() {
         Scenario scenario1 = new Scenario("Scenario 1");
         scenario1.addResource(new Resource("R1", 3, false));
@@ -126,6 +162,7 @@ class SnapshotTest {
         Process p1 = new Process("P1", 1);
         r1.grant(1);
         p1.holdInstances("R1", 1);
+        p1.setWaitingFor("R1", 1);
         scenario.addResource(r1);
         scenario.addProcess(p1);
 
@@ -141,6 +178,10 @@ class SnapshotTest {
                 snapshot.getProcessHeld().put("P1", Map.of()));
         assertThrows(UnsupportedOperationException.class, () ->
                 snapshot.getProcessHeld().get("P1").put("R1", 3));
+        assertThrows(UnsupportedOperationException.class, () ->
+                snapshot.getProcessWaitingResource().put("P1", "R2"));
+        assertThrows(UnsupportedOperationException.class, () ->
+                snapshot.getProcessWaitingCount().put("P1", 5));
     }
 
     @Test

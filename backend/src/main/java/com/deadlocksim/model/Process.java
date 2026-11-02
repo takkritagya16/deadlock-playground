@@ -11,6 +11,8 @@ public class Process {
     private boolean deadlocked;
     private final Map<String, Integer> held;
     private int instructionsExecuted;
+    private String waitingResourceId;
+    private int waitingCount;
 
     public Process(String id, int priority) {
         if (id == null || id.isBlank()) {
@@ -22,6 +24,8 @@ public class Process {
         this.deadlocked = false;
         this.held = new LinkedHashMap<>();
         this.instructionsExecuted = 0;
+        this.waitingResourceId = null;
+        this.waitingCount = 0;
     }
 
     public String getId() {
@@ -61,6 +65,34 @@ public class Process {
 
     public boolean isBlocked() {
         return this.state == ProcessState.WAITING;
+    }
+
+    public void setWaitingFor(String resourceId, int count) {
+        if (resourceId == null || resourceId.isBlank()) {
+            throw new IllegalArgumentException("Resource ID must not be null or blank");
+        }
+        if (count <= 0) {
+            throw new IllegalArgumentException("Count must be greater than zero");
+        }
+        this.waitingResourceId = resourceId;
+        this.waitingCount = count;
+    }
+
+    public void clearWaitingFor() {
+        this.waitingResourceId = null;
+        this.waitingCount = 0;
+    }
+
+    public String getWaitingResourceId() {
+        return waitingResourceId;
+    }
+
+    public int getWaitingCount() {
+        return waitingCount;
+    }
+
+    public boolean isWaiting() {
+        return waitingResourceId != null;
     }
 
     public void holdInstances(String resourceId, int n) {

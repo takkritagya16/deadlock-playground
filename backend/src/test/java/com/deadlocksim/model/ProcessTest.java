@@ -6,6 +6,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -22,6 +23,9 @@ class ProcessTest {
         assertEquals(0, process.getInstructionsExecuted());
         assertEquals(0, process.totalHeld());
         assertFalse(process.isBlocked());
+        assertFalse(process.isWaiting());
+        assertNull(process.getWaitingResourceId());
+        assertEquals(0, process.getWaitingCount());
     }
 
     @Test
@@ -53,6 +57,37 @@ class ProcessTest {
 
         process.setState(ProcessState.TERMINATED);
         assertFalse(process.isBlocked());
+    }
+
+    @Test
+    void setWaitingForStoresResourceAndCountAndIsWaitingReturnsTrue() {
+        Process process = new Process("P1", 1);
+        process.setWaitingFor("R1", 2);
+        assertTrue(process.isWaiting());
+        assertEquals("R1", process.getWaitingResourceId());
+        assertEquals(2, process.getWaitingCount());
+    }
+
+    @Test
+    void setWaitingForWithBlankResourceIdOrInvalidCountThrowsIllegalArgumentException() {
+        Process process = new Process("P1", 1);
+        assertThrows(IllegalArgumentException.class, () -> process.setWaitingFor(null, 1));
+        assertThrows(IllegalArgumentException.class, () -> process.setWaitingFor("", 1));
+        assertThrows(IllegalArgumentException.class, () -> process.setWaitingFor("   ", 1));
+        assertThrows(IllegalArgumentException.class, () -> process.setWaitingFor("R1", 0));
+        assertThrows(IllegalArgumentException.class, () -> process.setWaitingFor("R1", -1));
+    }
+
+    @Test
+    void clearWaitingForResetsBothValues() {
+        Process process = new Process("P1", 1);
+        process.setWaitingFor("R1", 3);
+        assertTrue(process.isWaiting());
+
+        process.clearWaitingFor();
+        assertFalse(process.isWaiting());
+        assertNull(process.getWaitingResourceId());
+        assertEquals(0, process.getWaitingCount());
     }
 
     @Test

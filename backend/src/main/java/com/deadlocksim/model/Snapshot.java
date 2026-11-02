@@ -11,15 +11,21 @@ public class Snapshot {
     private final Map<String, Map<String, Integer>> processHeld;
     private final Map<String, Boolean> processDeadlocked;
     private final Map<String, Integer> available;
+    private final Map<String, String> processWaitingResource;
+    private final Map<String, Integer> processWaitingCount;
 
     private Snapshot(Map<String, ProcessState> processStates,
                      Map<String, Map<String, Integer>> processHeld,
                      Map<String, Boolean> processDeadlocked,
-                     Map<String, Integer> available) {
+                     Map<String, Integer> available,
+                     Map<String, String> processWaitingResource,
+                     Map<String, Integer> processWaitingCount) {
         this.processStates = processStates;
         this.processHeld = processHeld;
         this.processDeadlocked = processDeadlocked;
         this.available = available;
+        this.processWaitingResource = processWaitingResource;
+        this.processWaitingCount = processWaitingCount;
     }
 
     public static Snapshot capture(Scenario s) {
@@ -30,11 +36,17 @@ public class Snapshot {
         Map<String, Map<String, Integer>> held = new LinkedHashMap<>();
         Map<String, Boolean> deadlocked = new LinkedHashMap<>();
         Map<String, Integer> avail = new LinkedHashMap<>();
+        Map<String, String> waitingResource = new LinkedHashMap<>();
+        Map<String, Integer> waitingCount = new LinkedHashMap<>();
 
         for (Process p : s.getProcesses()) {
             states.put(p.getId(), p.getState());
             held.put(p.getId(), Collections.unmodifiableMap(new LinkedHashMap<>(p.getHeld())));
             deadlocked.put(p.getId(), p.isDeadlocked());
+            if (p.isWaiting()) {
+                waitingResource.put(p.getId(), p.getWaitingResourceId());
+                waitingCount.put(p.getId(), p.getWaitingCount());
+            }
         }
 
         for (Resource r : s.getResources()) {
@@ -45,7 +57,9 @@ public class Snapshot {
                 Collections.unmodifiableMap(states),
                 Collections.unmodifiableMap(held),
                 Collections.unmodifiableMap(deadlocked),
-                Collections.unmodifiableMap(avail)
+                Collections.unmodifiableMap(avail),
+                Collections.unmodifiableMap(waitingResource),
+                Collections.unmodifiableMap(waitingCount)
         );
     }
 
@@ -72,6 +86,13 @@ public class Snapshot {
             p.setState(processStates.get(pid));
             p.setDeadlocked(processDeadlocked.get(pid));
             p.restoreHeld(processHeld.get(pid));
+            String waitRes = processWaitingResource.get(pid);
+            Integer waitCnt = processWaitingCount.get(pid);
+            if (waitRes != null && waitCnt != null) {
+                p.setWaitingFor(waitRes, waitCnt);
+            } else {
+                p.clearWaitingFor();
+            }
         }
 
         for (Resource r : s.getResources()) {
@@ -94,5 +115,13 @@ public class Snapshot {
 
     public Map<String, Integer> getAvailable() {
         return available;
+    }
+
+    public Map<String, String> getProcessWaitingResource() {
+        return processWaitingResource;
+    }
+
+    public Map<String, Integer> getProcessWaitingCount() {
+        return processWaitingCount;
     }
 }
