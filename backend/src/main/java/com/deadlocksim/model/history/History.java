@@ -46,6 +46,10 @@ public class History {
         return event;
     }
 
+    public Snapshot jumpTo(int sequence) {
+        return get(sequence).getSnapshot();
+    }
+
     public int size() {
         return events.size();
     }
