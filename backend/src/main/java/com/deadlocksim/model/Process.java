@@ -135,6 +135,15 @@ public class Process {
         this.instructionsExecuted++;
     }
 
+    public void rollbackState() {
+        this.state = ProcessState.RUNNING;
+        this.deadlocked = false;
+        this.held.clear();
+        this.waitingResourceId = null;
+        this.waitingCount = 0;
+        this.instructionsExecuted = 0;
+    }
+
     void restoreHeld(Map<String, Integer> newHeld) {
         if (newHeld == null) {
             throw new IllegalArgumentException("Held map must not be null");

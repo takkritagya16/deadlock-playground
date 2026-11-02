@@ -201,4 +201,51 @@ class ProcessTest {
         process.setDeadlocked(false);
         assertFalse(process.isDeadlocked());
     }
+
+    @Test
+    void rollbackStateResetsStateHoldingsDeadlockedWaitingForAndInstructionCount() {
+        Process process = new Process("P1", 1);
+        process.setState(ProcessState.WAITING);
+        process.setDeadlocked(true);
+        process.holdInstances("R1", 2);
+        process.holdInstances("R2", 1);
+        process.setWaitingFor("R3", 2);
+        process.recordInstruction();
+        process.recordInstruction();
+
+        assertEquals(ProcessState.WAITING, process.getState());
+        assertTrue(process.isDeadlocked());
+        assertEquals(3, process.totalHeld());
+        assertTrue(process.isWaiting());
+        assertEquals("R3", process.getWaitingResourceId());
+        assertEquals(2, process.getWaitingCount());
+        assertEquals(2, process.getInstructionsExecuted());
+
+        process.rollbackState();
+
+        assertEquals(ProcessState.RUNNING, process.getState());
+        assertFalse(process.isDeadlocked());
+        assertTrue(process.getHeld().isEmpty());
+        assertEquals(0, process.totalHeld());
+        assertFalse(process.isWaiting());
+        assertNull(process.getWaitingResourceId());
+        assertEquals(0, process.getWaitingCount());
+        assertEquals(0, process.getInstructionsExecuted());
+    }
+
+    @Test
+    void rollbackStateDoesNotChangeAnyResource() {
+        Resource resource = new Resource("R1", 3, false);
+        resource.grant(2);
+        assertEquals(1, resource.getAvailable());
+
+        Process process = new Process("P1", 1);
+        process.holdInstances("R1", 2);
+        process.setState(ProcessState.WAITING);
+
+        process.rollbackState();
+
+        assertEquals(1, resource.getAvailable());
+        assertEquals(3, resource.getTotal());
+    }
 }
