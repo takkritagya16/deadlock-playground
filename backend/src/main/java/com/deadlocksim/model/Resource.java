@@ -62,4 +62,11 @@ public class Resource {
         }
         available += n;
     }
+
+    void restoreAvailable(int a) {
+        if (a < 0 || a > total) {
+            throw new IllegalArgumentException("Available instances must be between 0 and total");
+        }
+        this.available = a;
+    }
 }

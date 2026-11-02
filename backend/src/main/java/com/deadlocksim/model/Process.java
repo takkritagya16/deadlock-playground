@@ -102,4 +102,20 @@ public class Process {
     public void recordInstruction() {
         this.instructionsExecuted++;
     }
+
+    void restoreHeld(Map<String, Integer> newHeld) {
+        if (newHeld == null) {
+            throw new IllegalArgumentException("Held map must not be null");
+        }
+        for (Map.Entry<String, Integer> entry : newHeld.entrySet()) {
+            if (entry.getKey() == null || entry.getKey().isBlank()) {
+                throw new IllegalArgumentException("Resource ID must not be null or blank");
+            }
+            if (entry.getValue() == null || entry.getValue() <= 0) {
+                throw new IllegalArgumentException("Instance count must be greater than zero");
+            }
+        }
+        this.held.clear();
+        this.held.putAll(newHeld);
+    }
 }
