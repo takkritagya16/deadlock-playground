@@ -13,6 +13,7 @@ public class Process {
     private int instructionsExecuted;
     private String waitingResourceId;
     private int waitingCount;
+    private int nextOperationIndex;
 
     public Process(String id, int priority) {
         if (id == null || id.isBlank()) {
@@ -26,6 +27,7 @@ public class Process {
         this.instructionsExecuted = 0;
         this.waitingResourceId = null;
         this.waitingCount = 0;
+        this.nextOperationIndex = 0;
     }
 
     public String getId() {
@@ -50,6 +52,21 @@ public class Process {
 
     public int getInstructionsExecuted() {
         return instructionsExecuted;
+    }
+
+    public int getNextOperationIndex() {
+        return nextOperationIndex;
+    }
+
+    public void advanceOperation() {
+        this.nextOperationIndex++;
+    }
+
+    void restoreNextOperationIndex(int index) {
+        if (index < 0) {
+            throw new IllegalArgumentException("Next operation index must not be negative");
+        }
+        this.nextOperationIndex = index;
     }
 
     public void setState(ProcessState s) {
@@ -142,6 +159,7 @@ public class Process {
         this.waitingResourceId = null;
         this.waitingCount = 0;
         this.instructionsExecuted = 0;
+        this.nextOperationIndex = 0;
     }
 
     void restoreHeld(Map<String, Integer> newHeld) {

@@ -182,6 +182,8 @@ class SnapshotTest {
                 snapshot.getProcessWaitingResource().put("P1", "R2"));
         assertThrows(UnsupportedOperationException.class, () ->
                 snapshot.getProcessWaitingCount().put("P1", 5));
+        assertThrows(UnsupportedOperationException.class, () ->
+                snapshot.getProcessNextIndex().put("P1", 5));
     }
 
     @Test
@@ -192,5 +194,50 @@ class SnapshotTest {
 
         Process p = new Process("P1", 1);
         assertThrows(IllegalArgumentException.class, () -> p.restoreHeld(null));
+        assertThrows(IllegalArgumentException.class, () -> p.restoreNextOperationIndex(-1));
+    }
+
+    @Test
+    void snapshotCapturedMidRunRestoresIndexAfterScenarioHasChanged() {
+        Scenario scenario = new Scenario("Test Scenario");
+        Process p1 = new Process("P1", 1);
+        Process p2 = new Process("P2", 2);
+        Resource r1 = new Resource("R1", 3, false);
+        scenario.addProcess(p1);
+        scenario.addProcess(p2);
+        scenario.addResource(r1);
+
+        p1.advanceOperation();
+        p1.advanceOperation();
+        p2.advanceOperation();
+
+        Snapshot snapshot = Snapshot.capture(scenario);
+        assertEquals(2, snapshot.getProcessNextIndex().get("P1"));
+        assertEquals(1, snapshot.getProcessNextIndex().get("P2"));
+
+        p1.advanceOperation();
+        p2.advanceOperation();
+        p2.advanceOperation();
+        assertEquals(3, p1.getNextOperationIndex());
+        assertEquals(3, p2.getNextOperationIndex());
+
+        snapshot.restoreInto(scenario);
+        assertEquals(2, p1.getNextOperationIndex());
+        assertEquals(1, p2.getNextOperationIndex());
+    }
+
+    @Test
+    void snapshotIndexMapCannotBeModifiedFromOutside() {
+        Scenario scenario = new Scenario("Test Scenario");
+        Process p1 = new Process("P1", 1);
+        scenario.addProcess(p1);
+        Resource r1 = new Resource("R1", 1, false);
+        scenario.addResource(r1);
+
+        Snapshot snapshot = Snapshot.capture(scenario);
+        assertThrows(UnsupportedOperationException.class, () ->
+                snapshot.getProcessNextIndex().put("P1", 5));
+        assertThrows(UnsupportedOperationException.class, () ->
+                snapshot.getProcessNextIndex().remove("P1"));
     }
 }

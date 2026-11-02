@@ -26,6 +26,7 @@ class ProcessTest {
         assertFalse(process.isWaiting());
         assertNull(process.getWaitingResourceId());
         assertEquals(0, process.getWaitingCount());
+        assertEquals(0, process.getNextOperationIndex());
     }
 
     @Test
@@ -88,6 +89,7 @@ class ProcessTest {
         assertFalse(process.isWaiting());
         assertNull(process.getWaitingResourceId());
         assertEquals(0, process.getWaitingCount());
+        assertEquals(0, process.getNextOperationIndex());
     }
 
     @Test
@@ -247,5 +249,44 @@ class ProcessTest {
 
         assertEquals(1, resource.getAvailable());
         assertEquals(3, resource.getTotal());
+    }
+
+    @Test
+    void newProcessHasNextOperationIndexZero() {
+        Process process = new Process("P1", 1);
+        assertEquals(0, process.getNextOperationIndex());
+    }
+
+    @Test
+    void advanceOperationIncrementsIndexByOneEachCall() {
+        Process process = new Process("P1", 1);
+        assertEquals(0, process.getNextOperationIndex());
+
+        process.advanceOperation();
+        assertEquals(1, process.getNextOperationIndex());
+
+        process.advanceOperation();
+        assertEquals(2, process.getNextOperationIndex());
+    }
+
+    @Test
+    void restoreNextOperationIndexWithNegativeValueThrowsIllegalArgumentException() {
+        Process process = new Process("P1", 1);
+        assertThrows(IllegalArgumentException.class, () -> process.restoreNextOperationIndex(-1));
+        assertThrows(IllegalArgumentException.class, () -> process.restoreNextOperationIndex(-5));
+
+        process.restoreNextOperationIndex(3);
+        assertEquals(3, process.getNextOperationIndex());
+    }
+
+    @Test
+    void rollbackStateResetsNextOperationIndexToZero() {
+        Process process = new Process("P1", 1);
+        process.advanceOperation();
+        process.advanceOperation();
+        assertEquals(2, process.getNextOperationIndex());
+
+        process.rollbackState();
+        assertEquals(0, process.getNextOperationIndex());
     }
 }
