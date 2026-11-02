@@ -1,5 +1,6 @@
 package com.deadlocksim.model.recovery;
 
+import com.deadlocksim.model.PreventionToggles;
 import com.deadlocksim.model.Process;
 import com.deadlocksim.model.ProcessState;
 import com.deadlocksim.model.Resource;
@@ -41,6 +42,39 @@ class TerminateTest {
         assertEquals(2, r2.getAvailable());
         assertTrue(p1.getHeld().isEmpty());
         assertEquals(0, p1.totalHeld());
+    }
+
+    @Test
+    void terminateWithMutualExclusionOnLeavesAvailableCountsUnchanged() {
+        Scenario scenario = new Scenario("Test");
+        Resource r1 = new Resource("R1", 3, false);
+        Resource r2 = new Resource("R2", 2, false);
+        scenario.addResource(r1);
+        scenario.addResource(r2);
+
+        Process p1 = new Process("P1", 1);
+        scenario.addProcess(p1);
+
+        r1.grant(2);
+        p1.holdInstances("R1", 2);
+        r2.grant(1);
+        p1.holdInstances("R2", 1);
+
+        assertEquals(1, r1.getAvailable());
+        assertEquals(1, r2.getAvailable());
+
+        PreventionToggles toggles = scenario.getPreventionToggles();
+        toggles.setMutualExclusion(true);
+        scenario.setPreventionToggles(toggles);
+
+        Terminate terminate = new Terminate();
+        terminate.apply(scenario, p1);
+
+        assertEquals(1, r1.getAvailable());
+        assertEquals(1, r2.getAvailable());
+        assertTrue(p1.getHeld().isEmpty());
+        assertEquals(ProcessState.TERMINATED, p1.getState());
+        assertFalse(p1.isDeadlocked());
     }
 
     @Test

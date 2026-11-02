@@ -22,6 +22,8 @@ public class Terminate implements RecoveryStrategy {
             throw new IllegalArgumentException("Victim process is not in the scenario");
         }
 
+        boolean shared = s.getPreventionToggles().isMutualExclusion();
+
         Map<String, Resource> resourceMap = new HashMap<>();
         for (Resource r : s.getResources()) {
             resourceMap.put(r.getId(), r);
@@ -34,7 +36,9 @@ public class Terminate implements RecoveryStrategy {
             if (r == null) {
                 throw new IllegalStateException("Resource " + resourceId + " held by victim is not in the scenario");
             }
-            r.release(count);
+            if (!shared) {
+                r.release(count);
+            }
             victim.releaseInstances(resourceId, count);
         }
 
