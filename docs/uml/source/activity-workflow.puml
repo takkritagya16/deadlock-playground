@@ -1,0 +1,44 @@
+﻿@startuml
+start
+:Configure scenario (UC1);
+:Validate configuration;
+if (Valid?) then (no)
+  :Show error, keep form open;
+  stop
+else (yes)
+endif
+:Load initial snapshot;
+repeat
+  :Step through next operation (UC4);
+  if (Operation is Request?) then (yes)
+    if (Prevention rules satisfied?) then (no)
+      :Reject request with explanation;
+    else (yes)
+      if (Free instance available?) then (no)
+        :Process Waiting;
+      else (yes)
+        :Run safety check (UC2);
+        if (Safe?) then (no)
+          :Deny request, process Waiting;
+        else (yes)
+          :Grant resource;
+        endif
+      endif
+    endif
+  else (Release)
+    :Release resource (UC3);
+    :Unblock waiting processes;
+  endif
+  :Record history event;
+repeat while (More operations?) is (yes) not (no)
+:Detect deadlock (UC5);
+if (Deadlock found?) then (yes)
+  :Select victim (UC6);
+  :Terminate or Preempt;
+  :Re-run detection;
+  :Record RESOLVED;
+else (no)
+  :Scenario is deadlock-free;
+endif
+stop
+@enduml

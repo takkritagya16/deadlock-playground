@@ -1,0 +1,21 @@
+﻿@startuml
+skinparam classAttributeIconSize 0
+class SimulationEngine <<Facade>> {
+  + recover(policy: VictimPolicy, strategy: RecoveryStrategy): void
+}
+interface VictimPolicy {
+  + selectVictim(deadlocked: List<Process>): Process
+}
+class PriorityPolicy
+class ResourcesHeldPolicy
+class RecoveryCostPolicy
+SimulationEngine --> VictimPolicy : uses
+VictimPolicy <|.. PriorityPolicy
+VictimPolicy <|.. ResourcesHeldPolicy
+VictimPolicy <|.. RecoveryCostPolicy
+note bottom of VictimPolicy
+  Engine depends on the interface.
+  A new policy is one new class,
+  with no change to the engine.
+end note
+@enduml

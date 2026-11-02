@@ -1,0 +1,37 @@
+﻿@startuml
+left to right direction
+skinparam componentStyle rectangle
+skinparam linetype ortho
+skinparam component {
+  BorderColor black
+  BackgroundColor white
+}
+
+package "View (Browser)" {
+  [HTML / CSS page] as UI
+  [Panels and controls (JS)] as Panels
+  [Cytoscape.js renderer] as RAG
+}
+
+package "Controller (Java HTTP)" {
+  [ApiServer\n(com.sun.net.httpserver)] as Api
+  [JSON mapper (Gson)] as Json
+}
+
+package "Model (Java domain)" {
+  [SimulationEngine\n(Facade)] as Engine
+  [Pluggable algorithms\nSafetyChecker, DetectionStrategy,\nVictimPolicy, RecoveryStrategy] as Algo
+  [Scenario, Process, Resource] as Domain
+  [History, Snapshot] as Hist
+}
+
+UI --> Panels
+Panels --> RAG
+Panels --> Api : fetch JSON
+Api --> Json
+Api --> Engine : use cases
+Engine --> Algo
+Engine --> Hist
+Engine --> Domain
+Algo --> Domain
+@enduml

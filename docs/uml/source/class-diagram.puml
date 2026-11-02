@@ -1,0 +1,117 @@
+﻿@startuml
+skinparam classAttributeIconSize 0
+
+class Scenario {
+  - name: String
+  - preventionToggles: PreventionToggles
+  + validate(): boolean
+  + createInitialSnapshot(): Snapshot
+}
+
+class Process {
+  - id: int
+  - priority: int
+  - state: ProcessState
+  - pendingOps: List<Operation>
+  + isBlocked(): boolean
+  + rollback(): void
+}
+
+class Resource {
+  - name: String
+  - totalInstances: int
+  - availableInstances: int
+  - shareable: boolean
+  + grant(n: int): boolean
+  + release(n: int): void
+}
+
+class SimulationEngine <<Facade>> {
+  + configure(s: Scenario): void
+  + request(p: Process, r: Resource): RequestOutcome
+  + release(p: Process, r: Resource): void
+  + step(): void
+  + detect(): DetectionResult
+  + recover(policy: VictimPolicy, strategy: RecoveryStrategy): void
+  + reset(): void
+}
+
+class SafetyChecker {
+  + check(tentative: Process, r: Resource): SafetyResult
+}
+
+interface DetectionStrategy {
+  + detect(g: Graph): DetectionResult
+}
+class CycleDetection
+class BankersDetection
+
+interface VictimPolicy {
+  + selectVictim(deadlocked: List<Process>): Process
+}
+class PriorityPolicy
+class ResourcesHeldPolicy
+class RecoveryCostPolicy
+
+interface RecoveryStrategy {
+  + apply(victim: Process): void
+}
+class Terminate
+class Preempt
+
+class Graph {
+  + nodes(): List<Node>
+  + edges(): List<Edge>
+  + findCycles(): List<Cycle>
+}
+
+class History {
+  + add(e: HistoryEvent): void
+  + get(index: int): HistoryEvent
+}
+
+class HistoryEvent {
+  - type: EventType
+  - description: String
+  - seq: int
+}
+
+class Snapshot {
+  - processes: List<ProcessState>
+  - available: Map<Resource, int>
+  + restore(): void
+}
+
+' Composition: scenario owns its parts
+Scenario *-- "1..*" Process : processes >
+Scenario *-- "1..*" Resource : resources >
+
+' Association: process holds / waits for resource instances
+Process "0..*" -- "0..*" Resource : holds/requests >
+
+' Facade dependencies
+SimulationEngine --> Scenario : current
+SimulationEngine *-- "1" History : records
+SimulationEngine ..> SafetyChecker : uses
+SimulationEngine --> DetectionStrategy : uses
+SimulationEngine --> VictimPolicy : uses
+SimulationEngine --> RecoveryStrategy : uses
+
+' Generalization
+DetectionStrategy <|.. CycleDetection
+DetectionStrategy <|.. BankersDetection
+VictimPolicy <|.. PriorityPolicy
+VictimPolicy <|.. ResourcesHeldPolicy
+VictimPolicy <|.. RecoveryCostPolicy
+RecoveryStrategy <|.. Terminate
+RecoveryStrategy <|.. Preempt
+
+' Aggregation: history is made of events, each with a snapshot
+History o-- "0..*" HistoryEvent : events >
+HistoryEvent "1" -- "1" Snapshot : state >
+
+' Detection reads the derived graph
+DetectionStrategy ..> Graph : reads
+Graph ..> Process
+Graph ..> Resource
+@enduml

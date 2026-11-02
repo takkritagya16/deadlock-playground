@@ -1,0 +1,29 @@
+﻿@startuml
+left to right direction
+
+actor User
+
+rectangle "Deadlock Visualisation and Recovery Simulator" {
+  usecase "UC1: Configure scenario" as UC1
+  usecase "UC2: Request resource" as UC2
+  usecase "UC3: Release resource" as UC3
+  usecase "UC4: Step through simulation" as UC4
+  usecase "UC5: Detect deadlock" as UC5
+  usecase "UC6: Recover from deadlock" as UC6
+  usecase "UC7: Reset scenario" as UC7
+  usecase "Check safe state" as SAFE
+  usecase "Preempt resource" as PRE
+}
+
+User --> UC1
+User --> UC2
+User --> UC3
+User --> UC4
+User --> UC5
+User --> UC6
+User --> UC7
+
+UC2 ..> SAFE : <<include>>
+UC6 ..> UC5 : <<include>>
+PRE ..> UC6 : <<extend>>
+@enduml

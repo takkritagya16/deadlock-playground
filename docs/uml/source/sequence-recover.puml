@@ -1,0 +1,36 @@
+﻿@startuml
+skinparam sequenceMessageAlign center
+
+actor User
+participant "SimulationEngine" as E
+participant "DetectionStrategy" as D
+participant "VictimPolicy" as V
+participant "RecoveryStrategy" as X
+participant "Process" as P
+participant "Resource" as R
+participant "History" as H
+
+User -> E : recover(policy, strategy)
+E -> D : detect(graph)
+D --> E : DetectionResult
+E -> H : add(DETECT)
+
+loop until deadlock resolved
+  E -> V : selectVictim(deadlocked)
+  V --> E : victim
+  E -> H : add(VICTIM_SELECTED)
+  E -> X : apply(victim)
+  X -> P : release all held (Terminate)
+  X -> R : release(n)
+  X -> H : add(TERMINATE or PREEMPT)
+  E -> D : detect(graph)
+  D --> E : DetectionResult
+  alt still deadlocked
+    note right of E : repeat with next victim
+  else resolved
+    E -> P : setState(Running) for unblocked
+    E -> H : add(RESOLVED)
+    E --> User : deadlock resolved
+  end
+end
+@enduml

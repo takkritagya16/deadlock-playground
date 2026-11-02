@@ -1,0 +1,18 @@
+﻿@startuml
+skinparam classAttributeIconSize 0
+interface ScenarioFactory {
+  + create(input: String): Scenario
+}
+class PresetScenarioFactory
+class FormScenarioFactory
+class SimulationEngine <<Facade>> {
+  + configure(factory: ScenarioFactory, input: String): void
+}
+SimulationEngine --> ScenarioFactory : uses
+ScenarioFactory <|.. PresetScenarioFactory
+ScenarioFactory <|.. FormScenarioFactory
+note bottom of ScenarioFactory
+  The engine works with any Scenario.
+  A new source is one new factory class.
+end note
+@enduml

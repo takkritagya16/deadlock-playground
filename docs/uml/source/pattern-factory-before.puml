@@ -1,0 +1,13 @@
+﻿@startuml
+skinparam classAttributeIconSize 0
+class SimulationEngine {
+  + configure(source: String): void
+  - buildFromPreset(name: String): Scenario
+  - buildFromForm(json: String): Scenario
+}
+note right of SimulationEngine
+  Engine knows how every scenario
+  source is parsed. Adding a source
+  edits the engine.
+end note
+@enduml

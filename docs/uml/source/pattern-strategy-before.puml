@@ -1,0 +1,14 @@
+﻿@startuml
+skinparam classAttributeIconSize 0
+class SimulationEngine {
+  + recover(policyName: String): void
+  - selectVictimByPriority(list): Process
+  - selectVictimByResourcesHeld(list): Process
+  - selectVictimByRecoveryCost(list): Process
+}
+note right of SimulationEngine
+  Every new policy means editing
+  this class. recover() branches
+  on a string.
+end note
+@enduml

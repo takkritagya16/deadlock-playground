@@ -1,0 +1,27 @@
+﻿@startuml
+top to bottom direction
+skinparam state {
+  BorderColor black
+  BackgroundColor white
+}
+
+[*] --> Running : process created
+
+Running --> Waiting : request blocked\n(no free instance or unsafe)
+Waiting --> Running : resource granted\nor rollback (Preempt)
+
+Running --> Completed : all operations done
+Running --> Terminated : victim selected\n(Terminate)
+Waiting --> Terminated : victim selected\n(Terminate)
+
+Completed --> [*]
+Terminated --> [*]
+
+note right of Waiting
+  Deadlocked is a flag,
+  not a state. Granting,
+  releasing, and rollback
+  inside Running are shown
+  in the sequence diagrams.
+end note
+@enduml

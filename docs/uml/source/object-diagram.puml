@@ -1,0 +1,50 @@
+﻿@startuml
+skinparam classAttributeIconSize 0
+
+object "P1: Process" as p1 {
+  id = 1
+  priority = 2
+  state = Waiting
+}
+object "P2: Process" as p2 {
+  id = 2
+  priority = 1
+  state = Waiting
+}
+object "P3: Process" as p3 {
+  id = 3
+  priority = 3
+  state = Running
+}
+
+object "R1: Resource" as r1 {
+  totalInstances = 1
+  availableInstances = 0
+  shareable = false
+}
+object "R2: Resource" as r2 {
+  totalInstances = 2
+  availableInstances = 0
+  shareable = false
+}
+object "R3: Resource" as r3 {
+  totalInstances = 1
+  availableInstances = 0
+  shareable = false
+}
+object "R4: Resource" as r4 {
+  totalInstances = 3
+  availableInstances = 3
+  shareable = false
+}
+
+' Allocations (process holds instances)
+r2 -- p1 : holds (1)
+r2 -- p2 : holds (1)
+r1 -- p2 : holds (1)
+r3 -- p3 : holds (1)
+
+' Requests (process waits for instance)
+p1 -- r1 : requests (1)
+p2 -- r3 : requests (1)
+@enduml

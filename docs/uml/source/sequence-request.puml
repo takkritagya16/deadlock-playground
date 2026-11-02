@@ -1,0 +1,37 @@
+﻿@startuml
+skinparam sequenceMessageAlign center
+
+actor User
+participant "SimulationEngine" as E
+participant "Process" as P
+participant "Resource" as R
+participant "SafetyChecker" as S
+participant "History" as H
+
+User -> E : request(p, r)
+E -> P : checkPreventionRules(r)
+alt rule violated
+  E -> H : add(BLOCK)
+  E --> User : rejected with explanation
+else rule satisfied
+  E -> R : hasFreeInstance()
+  alt no free instance
+    E -> P : setState(Waiting)
+    E -> H : add(BLOCK)
+    E --> User : request edge drawn
+  else instance available
+    E -> S : check(tentative grant)
+    S --> E : SafetyResult
+    alt safe
+      E -> R : grant(1)
+      E -> P : addHeld(r)
+      E -> H : add(GRANT)
+      E --> User : graph updated
+    else unsafe
+      E -> P : setState(Waiting)
+      E -> H : add(AVOIDANCE_CHECK: unsafe)
+      E --> User : denied with unsafe reasoning
+    end
+  end
+end
+@enduml
