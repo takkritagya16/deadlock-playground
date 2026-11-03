@@ -27,23 +27,38 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 
 public class ApiServer {
     private final SimulationEngine engine;
     private final int port;
+    private final Path frontendPath;
     private HttpServer server;
 
     public ApiServer(SimulationEngine engine) {
-        this(engine, 0);
+        this(engine, 0, Path.of("../frontend"));
     }
 
     public ApiServer(SimulationEngine engine, int port) {
+        this(engine, port, Path.of("../frontend"));
+    }
+
+    public ApiServer(SimulationEngine engine, int port, Path frontendPath) {
         this.engine = engine;
         this.port = port;
+        this.frontendPath = frontendPath != null ? frontendPath : Path.of("../frontend");
+    }
+
+    public ApiServer(SimulationEngine engine, int port, String frontendFolder) {
+        this(engine, port, frontendFolder != null ? Path.of(frontendFolder) : Path.of("../frontend"));
     }
 
     public SimulationEngine getEngine() {
         return engine;
+    }
+
+    public Path getFrontendPath() {
+        return frontendPath;
     }
 
     public int start() throws IOException {
