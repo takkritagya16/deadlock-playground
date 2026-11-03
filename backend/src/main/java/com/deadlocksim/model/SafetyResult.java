@@ -10,6 +10,9 @@ public final class SafetyResult {
     private final List<String> sequence;
 
     private SafetyResult(boolean safe, String reason, List<String> sequence) {
+        if (reason == null || reason.isBlank()) {
+            throw new IllegalArgumentException("Reason must not be null or blank");
+        }
         this.safe = safe;
         this.reason = reason;
         this.sequence = sequence != null ? Collections.unmodifiableList(sequence) : Collections.emptyList();

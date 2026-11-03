@@ -1,11 +1,7 @@
 package com.deadlocksim.model;
 
-import com.deadlocksim.model.detection.DetectionResult;
-
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public final class SafetyChecker {
@@ -59,7 +55,7 @@ public final class SafetyChecker {
                 String reason = "Safe sequence: " + finishResult.sequence();
                 return SafetyResult.safe(reason, finishResult.sequence());
             } else {
-                String reason = "Unsafe state: processes " + finishResult.stuck() + " cannot finish";
+                String reason = "Unsafe state: processes " + finishResult.stuck() + " cannot finish for resource " + resourceId;
                 return SafetyResult.unsafe(reason, finishResult.sequence());
             }
         } finally {
@@ -69,29 +65,5 @@ public final class SafetyChecker {
                 process.setWaitingFor(prevWaitRes, prevWaitCount);
             }
         }
-    }
-
-    public static DetectionResult detectDeadlock(Scenario s) {
-        if (s == null) {
-            throw new IllegalArgumentException("Scenario must not be null");
-        }
-        Map<String, Integer> work = new HashMap<>();
-        for (Resource r : s.getResources()) {
-            work.put(r.getId(), r.getAvailable());
-        }
-        BankersCore.FinishResult finishResult = BankersCore.run(s, work);
-        List<String> stuck = finishResult.stuck();
-        if (stuck.isEmpty()) {
-            for (Process p : s.getProcesses()) {
-                p.setDeadlocked(false);
-            }
-            return DetectionResult.none();
-        }
-        for (Process p : s.getProcesses()) {
-            p.setDeadlocked(stuck.contains(p.getId()));
-        }
-        List<String> sortedStuck = new ArrayList<>(stuck);
-        Collections.sort(sortedStuck);
-        return DetectionResult.of(sortedStuck, Collections.emptyList());
     }
 }

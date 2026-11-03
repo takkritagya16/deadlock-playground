@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-final class BankersCore {
+public final class BankersCore {
 
-    record FinishResult(List<String> sequence, List<String> stuck) {
-        FinishResult {
+    public record FinishResult(List<String> sequence, List<String> stuck) {
+        public FinishResult {
             sequence = Collections.unmodifiableList(new ArrayList<>(sequence));
             stuck = Collections.unmodifiableList(new ArrayList<>(stuck));
         }
@@ -20,7 +20,7 @@ final class BankersCore {
     private BankersCore() {
     }
 
-    static FinishResult run(Scenario s, Map<String, Integer> workAvailable) {
+    public static FinishResult run(Scenario s, Map<String, Integer> workAvailable) {
         if (s == null) {
             throw new IllegalArgumentException("Scenario must not be null");
         }
