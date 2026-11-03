@@ -1,4 +1,4 @@
-﻿# 6. Design Decisions
+# 6. Design Decisions
 
 ## Avoidance
 
@@ -10,7 +10,7 @@ Each Coffman condition has a live switch on the current scenario:
 
 - Mutual exclusion: marks a resource type as shareable, so grants never block on it.
 - Hold and wait: a process must request all its resources up front, and it holds nothing if it cannot get them all.
-- No preemption: allows the system to take a resource from a process by force.
+- Allow preemption (ON breaks the no-preemption condition): lets the system take a resource from a process by force. Preempt recovery is available only when this is ON.
 - Circular wait: enforces a global resource ordering. A process may only request a resource ranked above the ones it holds. Out-of-order requests are rejected with an explanation.
 
 ## Victim Policies
@@ -30,7 +30,7 @@ Ties go to the lower process ID.
 - Any resource instance held by a deadlocked process can be preempted, except a shareable resource, which cannot cause a deadlock.
 - The preempted process is rolled back to its initial state. It releases everything and restarts its request list from the beginning.
 - Checkpoint-based rollback is explained in the docs but not simulated.
-- Preemption is used only during recovery, or when the no-preemption toggle is off.
+- Preemption is used only during recovery, and only when the allow-preemption toggle is ON.
 
 ## Execution History
 

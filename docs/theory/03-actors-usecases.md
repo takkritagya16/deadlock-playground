@@ -1,4 +1,4 @@
-﻿# 3. Actors and Use Cases
+# 3. Actors and Use Cases
 
 ## Actors
 
@@ -59,7 +59,7 @@
   3. System updates the graph, the process states, and the history.
 - Alternate flows:
   - 2a. No operations are pending: the system reports that the scenario is finished and disables Step.
-  - 2b. The next operation is blocked: the process moves to Waiting, and the following Step continues with the next operation.
+  - 2b. Next operation is blocked: the process moves to Waiting. Its request stays pending and is granted automatically when the resource frees up, after which the process continues with its next operation.
   - 2c. User steps back through history: the system restores the snapshot from the previous event.
 - Post-condition: One operation has been applied, or the user has moved back to an earlier state.
 
