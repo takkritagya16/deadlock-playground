@@ -17,7 +17,10 @@ import { renderStatusLine } from './panels/status-line.js';
 import { renderConfigureForm } from './panels/configure-form.js';
 import { renderActionPanel } from './panels/action-panel.js';
 import { renderDetectRecoverPanel } from './panels/detect-recover-panel.js';
+import { renderHistoryPanel } from './panels/history-panel.js';
 import { renderGraph } from './graph/graph-view.js';
+
+let currentSeq = null;
 
 if (typeof window !== 'undefined') {
     window.getState = getState;
@@ -32,6 +35,7 @@ if (typeof window !== 'undefined') {
     window.jumpToEvent = jumpToEvent;
     window.setPreventionToggles = setPreventionToggles;
     window.refresh = refresh;
+    window.getCurrentSeq = () => currentSeq;
 }
 
 export async function refresh() {
@@ -43,6 +47,15 @@ export async function refresh() {
         renderGraph(result);
         renderActionPanel(result, refresh);
         renderDetectRecoverPanel(result, refresh);
+
+        const hist = await getHistory();
+        const events = hist && hist.events ? hist.events : (Array.isArray(hist) ? hist : []);
+        if (events.length > 0) {
+            currentSeq = events[events.length - 1].seq;
+        } else {
+            currentSeq = null;
+        }
+        renderHistoryPanel(events, currentSeq);
     } catch (err) {
         if (err.code === 'NO_SCENARIO') {
             const statusLine = document.getElementById('status-line');
@@ -54,6 +67,8 @@ export async function refresh() {
             renderGraph(null);
             renderActionPanel(null, refresh);
             renderDetectRecoverPanel(null, refresh);
+            currentSeq = null;
+            renderHistoryPanel([], null);
         } else {
             const statusLine = document.getElementById('status-line');
             if (statusLine) {
@@ -61,6 +76,8 @@ export async function refresh() {
             }
             renderActionPanel(null, refresh);
             renderDetectRecoverPanel(null, refresh);
+            currentSeq = null;
+            renderHistoryPanel([], null);
         }
     }
 }
@@ -73,6 +90,7 @@ export function init() {
         });
     }
     renderDetectRecoverPanel(null, refresh);
+    renderHistoryPanel([], null);
     refresh();
 }
 
