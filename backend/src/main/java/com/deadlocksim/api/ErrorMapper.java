@@ -30,25 +30,24 @@ public class ErrorMapper {
         LOOKUP_TABLE.put("Unknown policy", ErrorCode.INVALID_POLICY);
         LOOKUP_TABLE.put("Invalid policy", ErrorCode.INVALID_POLICY);
         LOOKUP_TABLE.put("Invalid history index", ErrorCode.INVALID_HISTORY_INDEX);
+        LOOKUP_TABLE.put("does not exist", ErrorCode.INVALID_HISTORY_INDEX);
         LOOKUP_TABLE.put("Process is not RUNNING", ErrorCode.VALIDATION_ERROR);
     }
 
     public static ErrorCode resolveCode(Throwable t) {
-        if (t instanceof IllegalArgumentException) {
-            return ErrorCode.VALIDATION_ERROR;
-        }
-        if (t instanceof IllegalStateException) {
-            String msg = t.getMessage();
-            if (msg != null) {
-                if (LOOKUP_TABLE.containsKey(msg)) {
-                    return LOOKUP_TABLE.get(msg);
-                }
-                for (Map.Entry<String, ErrorCode> entry : LOOKUP_TABLE.entrySet()) {
-                    if (msg.contains(entry.getKey())) {
-                        return entry.getValue();
-                    }
+        String msg = t.getMessage();
+        if (msg != null) {
+            if (LOOKUP_TABLE.containsKey(msg)) {
+                return LOOKUP_TABLE.get(msg);
+            }
+            for (Map.Entry<String, ErrorCode> entry : LOOKUP_TABLE.entrySet()) {
+                if (msg.contains(entry.getKey())) {
+                    return entry.getValue();
                 }
             }
+        }
+        if (t instanceof IllegalArgumentException) {
+            return ErrorCode.VALIDATION_ERROR;
         }
         return ErrorCode.INTERNAL_ERROR;
     }
@@ -85,4 +84,3 @@ public class ErrorMapper {
         }
     }
 }
-

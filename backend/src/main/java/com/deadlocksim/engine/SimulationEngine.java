@@ -394,4 +394,12 @@ public class SimulationEngine {
     public List<HistoryEvent> getHistoryEvents() {
         return history.events();
     }
+
+    public void jumpTo(int seq) {
+        if (scenario == null) {
+            throw new IllegalStateException("No scenario loaded");
+        }
+        Snapshot snapshot = history.jumpTo(seq);
+        snapshot.restoreInto(scenario);
+    }
 }

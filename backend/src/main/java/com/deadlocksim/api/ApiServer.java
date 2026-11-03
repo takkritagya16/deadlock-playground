@@ -145,6 +145,31 @@ public class ApiServer {
                 return;
             }
 
+            if ("/api/history/jump".equals(path)) {
+                if (!"POST".equalsIgnoreCase(method)) {
+                    ErrorMapper.sendError(exchange, ErrorCode.METHOD_NOT_ALLOWED, "Method not allowed: " + method);
+                    return;
+                }
+                JsonObject body = parseJsonObject(exchange);
+                if (!body.has("seq") || !body.get("seq").isJsonPrimitive()) {
+                    throw new IllegalArgumentException("Field 'seq' is required");
+                }
+                int seq = body.get("seq").getAsInt();
+                try {
+                    engine.jumpTo(seq);
+                } catch (IllegalArgumentException e) {
+                    ErrorMapper.sendError(exchange, ErrorCode.INVALID_HISTORY_INDEX, e.getMessage());
+                    return;
+                }
+                JsonObject root = new JsonObject();
+                root.addProperty("ok", true);
+                JsonObject data = new JsonObject();
+                data.add("state", JsonMapper.mapState(engine));
+                root.add("data", data);
+                sendJson(exchange, 200, root.toString());
+                return;
+            }
+
             if ("/api/request".equals(path)) {
                 if (!"POST".equalsIgnoreCase(method)) {
                     ErrorMapper.sendError(exchange, ErrorCode.METHOD_NOT_ALLOWED, "Method not allowed: " + method);
