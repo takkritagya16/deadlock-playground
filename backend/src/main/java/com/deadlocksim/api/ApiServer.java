@@ -43,38 +43,38 @@ public class ApiServer {
     }
 
     private void handleRoot(HttpExchange exchange) throws IOException {
-        String path = exchange.getRequestURI().getPath();
-        String method = exchange.getRequestMethod();
+        try {
+            String path = exchange.getRequestURI().getPath();
+            String method = exchange.getRequestMethod();
 
-        if ("/api/health".equals(path)) {
-            if (!"GET".equalsIgnoreCase(method)) {
-                sendError(exchange, 405, "METHOD_NOT_ALLOWED", "Method not allowed: " + method);
+            if ("/api/health".equals(path)) {
+                if (!"GET".equalsIgnoreCase(method)) {
+                    ErrorMapper.sendError(exchange, ErrorCode.METHOD_NOT_ALLOWED, "Method not allowed: " + method);
+                    return;
+                }
+                sendJson(exchange, 200, "{\"ok\":true,\"data\":{\"status\":\"UP\"}}");
                 return;
             }
-            sendJson(exchange, 200, "{\"ok\":true,\"data\":{\"status\":\"UP\"}}");
-            return;
+
+            if ("/api/state".equals(path)) {
+                if (!"GET".equalsIgnoreCase(method)) {
+                    ErrorMapper.sendError(exchange, ErrorCode.METHOD_NOT_ALLOWED, "Method not allowed: " + method);
+                    return;
+                }
+                JsonObject stateObj = JsonMapper.mapState(engine);
+                JsonObject root = new JsonObject();
+                root.addProperty("ok", true);
+                JsonObject data = new JsonObject();
+                data.add("state", stateObj);
+                root.add("data", data);
+                sendJson(exchange, 200, root.toString());
+                return;
+            }
+
+            ErrorMapper.sendError(exchange, ErrorCode.NOT_FOUND, "Not found: " + path);
+        } catch (Throwable t) {
+            ErrorMapper.sendError(exchange, t);
         }
-
-        if ("/api/state".equals(path)) {
-            if (!"GET".equalsIgnoreCase(method)) {
-                sendError(exchange, 405, "METHOD_NOT_ALLOWED", "Method not allowed: " + method);
-                return;
-            }
-            if (engine.getScenario() == null) {
-                sendError(exchange, 409, "NO_SCENARIO", "No scenario loaded");
-                return;
-            }
-            JsonObject stateObj = JsonMapper.mapState(engine);
-            JsonObject root = new JsonObject();
-            root.addProperty("ok", true);
-            JsonObject data = new JsonObject();
-            data.add("state", stateObj);
-            root.add("data", data);
-            sendJson(exchange, 200, root.toString());
-            return;
-        }
-
-        sendError(exchange, 404, "NOT_FOUND", "Not found: " + path);
     }
 
     void sendJson(HttpExchange exchange, int statusCode, String json) throws IOException {
@@ -87,12 +87,12 @@ public class ApiServer {
     }
 
     void sendError(HttpExchange exchange, int statusCode, String code, String message) throws IOException {
-        JsonObject root = new JsonObject();
-        root.addProperty("ok", false);
-        JsonObject error = new JsonObject();
-        error.addProperty("code", code);
-        error.addProperty("message", message);
-        root.add("error", error);
-        sendJson(exchange, statusCode, root.toString());
+        ErrorCode errorCode;
+        try {
+            errorCode = ErrorCode.valueOf(code);
+        } catch (Exception e) {
+            errorCode = ErrorCode.INTERNAL_ERROR;
+        }
+        ErrorMapper.sendError(exchange, errorCode, message);
     }
 }
