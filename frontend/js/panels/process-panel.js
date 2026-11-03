@@ -7,7 +7,8 @@ export function renderProcessPanel(state) {
     const container = panel.querySelector('.panel-content') || panel;
     container.textContent = '';
 
-    const processes = state && Array.isArray(state.processes) ? state.processes : [];
+    const actualState = (state && state.state) ? state.state : state;
+    const processes = actualState && Array.isArray(actualState.processes) ? actualState.processes : [];
     if (processes.length === 0) {
         const emptyMsg = document.createElement('p');
         emptyMsg.className = 'placeholder-text';

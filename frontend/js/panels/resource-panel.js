@@ -7,7 +7,8 @@ export function renderResourcePanel(state) {
     const container = panel.querySelector('.panel-content') || panel;
     container.textContent = '';
 
-    const resources = state && Array.isArray(state.resources) ? state.resources : [];
+    const actualState = (state && state.state) ? state.state : state;
+    const resources = actualState && Array.isArray(actualState.resources) ? actualState.resources : [];
     if (resources.length === 0) {
         const emptyMsg = document.createElement('p');
         emptyMsg.className = 'placeholder-text';
