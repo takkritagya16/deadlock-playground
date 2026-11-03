@@ -21,6 +21,7 @@ import { renderHistoryPanel } from './panels/history-panel.js';
 import { renderGraph } from './graph/graph-view.js';
 
 let currentSeq = null;
+let currentEvents = [];
 
 if (typeof window !== 'undefined') {
     window.getState = getState;
@@ -35,7 +36,49 @@ if (typeof window !== 'undefined') {
     window.jumpToEvent = jumpToEvent;
     window.setPreventionToggles = setPreventionToggles;
     window.refresh = refresh;
+    window.jump = jump;
     window.getCurrentSeq = () => currentSeq;
+}
+
+function updateHistoryButtons(events, seq) {
+    const btnBack = document.getElementById('btn-step-back');
+    const btnForward = document.getElementById('btn-step-forward');
+    if (!btnBack && !btnForward) return;
+
+    if (!events || events.length === 0 || seq === null || seq === undefined) {
+        if (btnBack) btnBack.disabled = true;
+        if (btnForward) btnForward.disabled = true;
+        return;
+    }
+
+    const hasPrev = events.some(e => e.seq === seq - 1);
+    const hasNext = events.some(e => e.seq === seq + 1);
+
+    if (btnBack) btnBack.disabled = !hasPrev;
+    if (btnForward) btnForward.disabled = !hasNext;
+}
+
+export async function jump(seq) {
+    try {
+        const data = await jumpToEvent(seq);
+        const jumpedState = (data && data.state) ? data.state : data;
+        currentSeq = seq;
+
+        renderStatusLine(jumpedState);
+        renderProcessPanel(jumpedState);
+        renderResourcePanel(jumpedState);
+        renderGraph(jumpedState);
+        renderActionPanel(jumpedState, refresh);
+        renderDetectRecoverPanel(jumpedState, refresh);
+
+        const hist = await getHistory();
+        currentEvents = hist && hist.events ? hist.events : (Array.isArray(hist) ? hist : []);
+        renderHistoryPanel(currentEvents, currentSeq, jump);
+        updateHistoryButtons(currentEvents, currentSeq);
+        return jumpedState;
+    } catch (err) {
+        console.error('Jump failed', err);
+    }
 }
 
 export async function refresh() {
@@ -49,13 +92,14 @@ export async function refresh() {
         renderDetectRecoverPanel(result, refresh);
 
         const hist = await getHistory();
-        const events = hist && hist.events ? hist.events : (Array.isArray(hist) ? hist : []);
-        if (events.length > 0) {
-            currentSeq = events[events.length - 1].seq;
+        currentEvents = hist && hist.events ? hist.events : (Array.isArray(hist) ? hist : []);
+        if (currentEvents.length > 0) {
+            currentSeq = currentEvents[currentEvents.length - 1].seq;
         } else {
             currentSeq = null;
         }
-        renderHistoryPanel(events, currentSeq);
+        renderHistoryPanel(currentEvents, currentSeq, jump);
+        updateHistoryButtons(currentEvents, currentSeq);
     } catch (err) {
         if (err.code === 'NO_SCENARIO') {
             const statusLine = document.getElementById('status-line');
@@ -68,7 +112,9 @@ export async function refresh() {
             renderActionPanel(null, refresh);
             renderDetectRecoverPanel(null, refresh);
             currentSeq = null;
-            renderHistoryPanel([], null);
+            currentEvents = [];
+            renderHistoryPanel([], null, jump);
+            updateHistoryButtons([], null);
         } else {
             const statusLine = document.getElementById('status-line');
             if (statusLine) {
@@ -77,8 +123,32 @@ export async function refresh() {
             renderActionPanel(null, refresh);
             renderDetectRecoverPanel(null, refresh);
             currentSeq = null;
-            renderHistoryPanel([], null);
+            currentEvents = [];
+            renderHistoryPanel([], null, jump);
+            updateHistoryButtons([], null);
         }
+    }
+}
+
+function setupHistoryControls() {
+    const btnBack = document.getElementById('btn-step-back');
+    if (btnBack && !btnBack.dataset.wired) {
+        btnBack.dataset.wired = 'true';
+        btnBack.addEventListener('click', async () => {
+            if (currentSeq !== null && currentEvents.some(e => e.seq === currentSeq - 1)) {
+                await jump(currentSeq - 1);
+            }
+        });
+    }
+
+    const btnForward = document.getElementById('btn-step-forward');
+    if (btnForward && !btnForward.dataset.wired) {
+        btnForward.dataset.wired = 'true';
+        btnForward.addEventListener('click', async () => {
+            if (currentSeq !== null && currentEvents.some(e => e.seq === currentSeq + 1)) {
+                await jump(currentSeq + 1);
+            }
+        });
     }
 }
 
@@ -90,12 +160,16 @@ export function init() {
         });
     }
     renderDetectRecoverPanel(null, refresh);
-    renderHistoryPanel([], null);
+    renderHistoryPanel([], null, jump);
+    setupHistoryControls();
+    updateHistoryButtons([], null);
     refresh();
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-} else {
-    init();
+if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
 }
