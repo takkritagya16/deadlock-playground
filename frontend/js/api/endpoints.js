@@ -8,6 +8,10 @@ export async function configureScenario(scenarioBody) {
     return request('POST', '/api/scenario', scenarioBody);
 }
 
+export async function setPreventionToggles(body) {
+    return request('POST', '/api/prevention', body);
+}
+
 export async function reset(confirmed = false) {
     return request('POST', '/api/reset', { confirmed });
 }
