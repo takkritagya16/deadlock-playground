@@ -1,10 +1,14 @@
 package com.deadlocksim.api;
 
+import com.deadlocksim.engine.ReleaseResult;
+import com.deadlocksim.engine.RequestResult;
 import com.deadlocksim.engine.SimulationEngine;
+import com.deadlocksim.engine.StepResult;
 import com.deadlocksim.model.Scenario;
 import com.deadlocksim.model.history.HistoryEvent;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
@@ -129,6 +133,92 @@ public class ApiServer {
                 root.addProperty("ok", true);
                 JsonObject data = new JsonObject();
                 data.add("events", eventsArray);
+                root.add("data", data);
+                sendJson(exchange, 200, root.toString());
+                return;
+            }
+
+            if ("/api/request".equals(path)) {
+                if (!"POST".equalsIgnoreCase(method)) {
+                    ErrorMapper.sendError(exchange, ErrorCode.METHOD_NOT_ALLOWED, "Method not allowed: " + method);
+                    return;
+                }
+                JsonObject body = parseJsonObject(exchange);
+                if (!body.has("process") || !body.get("process").isJsonPrimitive()) {
+                    throw new IllegalArgumentException("Field 'process' is required");
+                }
+                if (!body.has("resource") || !body.get("resource").isJsonPrimitive()) {
+                    throw new IllegalArgumentException("Field 'resource' is required");
+                }
+                if (!body.has("count") || !body.get("count").isJsonPrimitive()) {
+                    throw new IllegalArgumentException("Field 'count' is required");
+                }
+                String processId = body.get("process").getAsString();
+                String resourceId = body.get("resource").getAsString();
+                int count = body.get("count").getAsInt();
+
+                RequestResult rr = engine.request(processId, resourceId, count);
+                JsonObject root = new JsonObject();
+                root.addProperty("ok", true);
+                JsonObject data = new JsonObject();
+                data.addProperty("outcome", rr.outcome().name());
+                data.addProperty("reason", rr.reason());
+                data.add("safety", JsonNull.INSTANCE);
+                data.add("state", JsonMapper.mapState(engine));
+                root.add("data", data);
+                sendJson(exchange, 200, root.toString());
+                return;
+            }
+
+            if ("/api/release".equals(path)) {
+                if (!"POST".equalsIgnoreCase(method)) {
+                    ErrorMapper.sendError(exchange, ErrorCode.METHOD_NOT_ALLOWED, "Method not allowed: " + method);
+                    return;
+                }
+                JsonObject body = parseJsonObject(exchange);
+                if (!body.has("process") || !body.get("process").isJsonPrimitive()) {
+                    throw new IllegalArgumentException("Field 'process' is required");
+                }
+                if (!body.has("resource") || !body.get("resource").isJsonPrimitive()) {
+                    throw new IllegalArgumentException("Field 'resource' is required");
+                }
+                if (!body.has("count") || !body.get("count").isJsonPrimitive()) {
+                    throw new IllegalArgumentException("Field 'count' is required");
+                }
+                String processId = body.get("process").getAsString();
+                String resourceId = body.get("resource").getAsString();
+                int count = body.get("count").getAsInt();
+
+                ReleaseResult rr = engine.release(processId, resourceId, count);
+                JsonObject root = new JsonObject();
+                root.addProperty("ok", true);
+                JsonObject data = new JsonObject();
+                JsonArray unblocked = new JsonArray();
+                for (String pid : rr.unblockedProcessIds()) {
+                    unblocked.add(pid);
+                }
+                data.add("unblocked", unblocked);
+                data.add("state", JsonMapper.mapState(engine));
+                root.add("data", data);
+                sendJson(exchange, 200, root.toString());
+                return;
+            }
+
+            if ("/api/step".equals(path)) {
+                if (!"POST".equalsIgnoreCase(method)) {
+                    ErrorMapper.sendError(exchange, ErrorCode.METHOD_NOT_ALLOWED, "Method not allowed: " + method);
+                    return;
+                }
+                parseJsonObjectOrEmpty(exchange);
+                StepResult sr = engine.step();
+                JsonObject root = new JsonObject();
+                root.addProperty("ok", true);
+                JsonObject data = new JsonObject();
+                JsonObject executed = new JsonObject();
+                executed.addProperty("description", sr.description());
+                data.add("executed", executed);
+                data.addProperty("finished", sr.finished());
+                data.add("state", JsonMapper.mapState(engine));
                 root.add("data", data);
                 sendJson(exchange, 200, root.toString());
                 return;
