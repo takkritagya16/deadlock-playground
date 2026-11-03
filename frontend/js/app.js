@@ -16,6 +16,7 @@ import { renderResourcePanel } from './panels/resource-panel.js';
 import { renderStatusLine } from './panels/status-line.js';
 import { renderConfigureForm } from './panels/configure-form.js';
 import { renderActionPanel } from './panels/action-panel.js';
+import { renderDetectRecoverPanel } from './panels/detect-recover-panel.js';
 import { renderGraph } from './graph/graph-view.js';
 
 if (typeof window !== 'undefined') {
@@ -41,6 +42,7 @@ export async function refresh() {
         renderResourcePanel(result);
         renderGraph(result);
         renderActionPanel(result, refresh);
+        renderDetectRecoverPanel(result, refresh);
     } catch (err) {
         if (err.code === 'NO_SCENARIO') {
             const statusLine = document.getElementById('status-line');
@@ -51,12 +53,14 @@ export async function refresh() {
             renderResourcePanel(null);
             renderGraph(null);
             renderActionPanel(null, refresh);
+            renderDetectRecoverPanel(null, refresh);
         } else {
             const statusLine = document.getElementById('status-line');
             if (statusLine) {
                 statusLine.textContent = err.message || err.code || 'An error occurred';
             }
             renderActionPanel(null, refresh);
+            renderDetectRecoverPanel(null, refresh);
         }
     }
 }
@@ -68,6 +72,7 @@ export function init() {
             await refresh();
         });
     }
+    renderDetectRecoverPanel(null, refresh);
     refresh();
 }
 
