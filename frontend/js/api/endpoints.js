@@ -27,3 +27,14 @@ export async function releaseResource(process, resource, count) {
 export async function step() {
     return request('POST', '/api/step', {});
 }
+
+export async function detect() {
+    return request('POST', '/api/detect', {});
+}
+
+export async function recover(policy = 'RECOVERY_COST', strategy = 'TERMINATE') {
+    return request('POST', '/api/recover', {
+        policy: policy !== undefined ? policy : 'RECOVERY_COST',
+        strategy: strategy !== undefined ? strategy : 'TERMINATE'
+    });
+}
