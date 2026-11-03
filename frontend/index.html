@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deadlock Visualisation and Recovery Simulator</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <h1>Deadlock Visualisation and Recovery Simulator</h1>
+    </header>
+
+    <div class="control-bar" role="toolbar" aria-label="Simulator Controls">
+      <button type="button" id="btn-configure">Configure</button>
+      <button type="button" id="btn-request">Request</button>
+      <button type="button" id="btn-release">Release</button>
+      <button type="button" id="btn-step">Step</button>
+      <button type="button" id="btn-detect">Detect</button>
+      <button type="button" id="btn-recover">Recover</button>
+      <button type="button" id="btn-reset">Reset</button>
+    </div>
+
+    <main class="main-area">
+      <section id="graph" class="graph-region">
+        <div class="panel-header">
+          <h2>Resource Allocation Graph</h2>
+        </div>
+        <div class="graph-canvas" aria-label="Graph display area">
+          <p class="placeholder-text">Graph visualization will be rendered here.</p>
+        </div>
+      </section>
+
+      <aside class="side-column">
+        <section id="process-panel" class="panel">
+          <div class="panel-header">
+            <h2>Processes</h2>
+          </div>
+          <div class="panel-content">
+            <p class="placeholder-text">No processes loaded.</p>
+          </div>
+        </section>
+
+        <section id="resource-panel" class="panel">
+          <div class="panel-header">
+            <h2>Resources</h2>
+          </div>
+          <div class="panel-content">
+            <p class="placeholder-text">No resources loaded.</p>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <div id="status-line" class="status-line" role="status" aria-live="polite">
+      Ready. Load or configure a scenario to begin.
+    </div>
+
+    <section id="history-panel" class="panel history-region">
+      <div class="panel-header">
+        <h2>Event History</h2>
+      </div>
+      <div class="panel-content">
+        <p class="placeholder-text">No events recorded yet.</p>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
