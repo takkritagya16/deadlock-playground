@@ -27,7 +27,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 
 public class ApiServer {
     private final SimulationEngine engine;
@@ -79,6 +81,15 @@ public class ApiServer {
         try {
             String path = exchange.getRequestURI().getPath();
             String method = exchange.getRequestMethod();
+
+            if (!path.startsWith("/api/")) {
+                if (!"GET".equalsIgnoreCase(method)) {
+                    ErrorMapper.sendError(exchange, ErrorCode.METHOD_NOT_ALLOWED, "Method not allowed: " + method);
+                    return;
+                }
+                serveStatic(exchange, path);
+                return;
+            }
 
             if ("/api/health".equals(path)) {
                 if (!"GET".equalsIgnoreCase(method)) {
@@ -370,6 +381,55 @@ public class ApiServer {
             ErrorMapper.sendError(exchange, ErrorCode.NOT_FOUND, "Not found: " + path);
         } catch (Throwable t) {
             ErrorMapper.sendError(exchange, t);
+        }
+    }
+
+    private void serveStatic(HttpExchange exchange, String path) throws IOException {
+        if (path.contains("..")) {
+            ErrorMapper.sendError(exchange, ErrorCode.NOT_FOUND, "Not found: " + path);
+            return;
+        }
+
+        String relativePath = "/".equals(path) ? "index.html" : (path.startsWith("/") ? path.substring(1) : path);
+        if (relativePath.isEmpty()) {
+            relativePath = "index.html";
+        }
+
+        Path normalizedBase = frontendPath.toAbsolutePath().normalize();
+        Path target = normalizedBase.resolve(relativePath).normalize();
+
+        if (!target.startsWith(normalizedBase)) {
+            ErrorMapper.sendError(exchange, ErrorCode.NOT_FOUND, "Not found: " + path);
+            return;
+        }
+
+        if (!Files.exists(target) || !Files.isRegularFile(target)) {
+            ErrorMapper.sendError(exchange, ErrorCode.NOT_FOUND, "Not found: " + path);
+            return;
+        }
+
+        String filename = target.getFileName().toString().toLowerCase(Locale.ROOT);
+        String contentType;
+        if (filename.endsWith(".html")) {
+            contentType = "text/html";
+        } else if (filename.endsWith(".css")) {
+            contentType = "text/css";
+        } else if (filename.endsWith(".js")) {
+            contentType = "application/javascript";
+        } else if (filename.endsWith(".svg")) {
+            contentType = "image/svg+xml";
+        } else if (filename.endsWith(".png")) {
+            contentType = "image/png";
+        } else {
+            ErrorMapper.sendError(exchange, ErrorCode.NOT_FOUND, "Not found: " + path);
+            return;
+        }
+
+        byte[] bytes = Files.readAllBytes(target);
+        exchange.getResponseHeaders().set("Content-Type", contentType);
+        exchange.sendResponseHeaders(200, bytes.length);
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(bytes);
         }
     }
 
