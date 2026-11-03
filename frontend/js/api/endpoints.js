@@ -38,3 +38,7 @@ export async function recover(policy = 'RECOVERY_COST', strategy = 'TERMINATE') 
         strategy: strategy !== undefined ? strategy : 'TERMINATE'
     });
 }
+
+export async function jumpToEvent(seq) {
+    return request('POST', '/api/history/jump', { seq });
+}
