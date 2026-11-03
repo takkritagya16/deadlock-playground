@@ -24,7 +24,49 @@ export function renderGraph(state) {
         }
         cy = cytoscape({
             container,
-            elements: []
+            elements: [],
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'font-family': 'Georgia, serif',
+                        'color': '#000000',
+                        'text-valign': 'center',
+                        'text-halign': 'center',
+                        'padding': '8px',
+                        'width': 'label',
+                        'height': 'label'
+                    }
+                },
+                {
+                    selector: 'node[type = "process"]',
+                    style: {
+                        'shape': 'ellipse',
+                        'background-color': '#ffffff',
+                        'border-width': 1,
+                        'border-color': '#000000',
+                        'label': 'data(id)'
+                    }
+                },
+                {
+                    selector: 'node[type = "resource"]',
+                    style: {
+                        'shape': 'rectangle',
+                        'background-color': '#ffffff',
+                        'border-width': 1,
+                        'border-color': '#000000',
+                        'label': function(ele) {
+                            const id = ele.data('id');
+                            const instances = ele.data('instances');
+                            if (!instances || instances <= 0) {
+                                return id;
+                            }
+                            const dots = Array(instances).fill('\u25CF').join(' ');
+                            return `${id} ${dots}`;
+                        }
+                    }
+                }
+            ]
         });
         if (typeof window !== 'undefined') {
             window.cy = cy;
