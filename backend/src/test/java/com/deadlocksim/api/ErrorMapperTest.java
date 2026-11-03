@@ -78,6 +78,23 @@ class ErrorMapperTest {
     }
 
     @Test
+    void preemptionViolationTriggeredThroughHttp() throws IOException, InterruptedException {
+        startServerWithEngine(new SimulationEngine() {
+            @Override
+            public Scenario getScenario() {
+                throw new IllegalStateException("Victim holds no resources to preempt");
+            }
+        });
+
+        HttpResponse<String> response = sendGet("/api/state");
+        assertEquals(400, response.statusCode());
+        JsonObject body = gson.fromJson(response.body(), JsonObject.class);
+        assertFalse(body.get("ok").getAsBoolean());
+        assertEquals("PREEMPTION_VIOLATION", body.getAsJsonObject("error").get("code").getAsString());
+        assertEquals("Victim holds no resources to preempt", body.getAsJsonObject("error").get("message").getAsString());
+    }
+
+    @Test
     void notHeldTriggeredThroughHttp() throws IOException, InterruptedException {
         startServerWithEngine(new SimulationEngine() {
             @Override
@@ -237,4 +254,3 @@ class ErrorMapperTest {
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 }
-

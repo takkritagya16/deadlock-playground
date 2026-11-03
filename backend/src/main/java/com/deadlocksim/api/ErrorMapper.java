@@ -17,6 +17,7 @@ public class ErrorMapper {
         LOOKUP_TABLE.put("No deadlock to recover from", ErrorCode.NO_DEADLOCK);
         LOOKUP_TABLE.put("No waiting process to check", ErrorCode.NO_DEADLOCK);
         LOOKUP_TABLE.put("Preemption is disabled", ErrorCode.PREVENTION_VIOLATION);
+        LOOKUP_TABLE.put("Victim holds no resources to preempt", ErrorCode.PREEMPTION_VIOLATION);
         LOOKUP_TABLE.put("Confirmation required to reset", ErrorCode.VALIDATION_ERROR);
         LOOKUP_TABLE.put("Circular wait prevention", ErrorCode.PREVENTION_VIOLATION);
         LOOKUP_TABLE.put("Hold and wait prevention", ErrorCode.PREVENTION_VIOLATION);
