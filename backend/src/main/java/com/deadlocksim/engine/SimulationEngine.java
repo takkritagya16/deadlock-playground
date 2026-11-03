@@ -42,6 +42,15 @@ public class SimulationEngine {
         }
     }
 
+    private void checkTruncateBeforeAction() {
+        if (this.history.size() > 0) {
+            int newestSeq = this.history.events().get(this.history.size() - 1).getSequence();
+            if (this.viewedSeq < newestSeq) {
+                this.history.truncateAfter(this.viewedSeq);
+            }
+        }
+    }
+
     public int getViewedSeq() {
         return viewedSeq;
     }
@@ -95,6 +104,8 @@ public class SimulationEngine {
         if (process.getState() != ProcessState.RUNNING) {
             throw new IllegalStateException("Process is not RUNNING: " + processId);
         }
+
+        checkTruncateBeforeAction();
 
         if (scenario.getPreventionToggles().isCircularWait()) {
             List<Resource> resources = scenario.getResources();
@@ -188,6 +199,8 @@ public class SimulationEngine {
             throw new IllegalStateException("Process " + processId + " holds only " + held + " of " + resourceId);
         }
 
+        checkTruncateBeforeAction();
+
         if (!isShared()) {
             resource.release(count);
         }
@@ -265,6 +278,8 @@ public class SimulationEngine {
             }
         }
 
+        checkTruncateBeforeAction();
+
         Operation op = targetOps.get(targetProcess.getNextOperationIndex());
         String description;
 
@@ -307,6 +322,8 @@ public class SimulationEngine {
             throw new IllegalStateException("No waiting process to check");
         }
 
+        checkTruncateBeforeAction();
+
         boolean allSingle = scenario.getResources().stream().allMatch(r -> r.getTotal() == 1);
         String strategyName = allSingle ? "CYCLE" : "BANKERS";
         Graph g = new Graph(scenario);
@@ -330,6 +347,8 @@ public class SimulationEngine {
         if (policy == null) {
             throw new IllegalArgumentException("Victim policy must not be null");
         }
+
+        checkTruncateBeforeAction();
 
         DetectReport initialReport = detect();
         if (!initialReport.result().isDeadlocked()) {

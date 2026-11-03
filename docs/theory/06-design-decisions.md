@@ -38,6 +38,7 @@ Ties go to the lower process ID.
 - Navigation: users can step backward and forward, or click any event to jump to that state.
 - Storage: each event stores a snapshot of the system. At this scale that is cheap, and it makes stepping back a simple restore.
 - The history itself is read-only.
+- A new action after a jump discards the events after the jump point. Jumping alone never removes events.
 
 ## Process States
 

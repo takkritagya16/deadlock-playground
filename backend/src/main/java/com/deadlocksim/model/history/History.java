@@ -50,6 +50,14 @@ public class History {
         return get(sequence).getSnapshot();
     }
 
+    public void truncateAfter(int sequence) {
+        if (sequence < 0) {
+            throw new IllegalArgumentException("Sequence must not be negative");
+        }
+        events.removeIf(e -> e.getSequence() > sequence);
+        nextSequence = sequence + 1;
+    }
+
     public int size() {
         return events.size();
     }

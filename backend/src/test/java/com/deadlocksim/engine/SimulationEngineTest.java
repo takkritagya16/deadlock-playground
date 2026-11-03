@@ -190,4 +190,72 @@ class SimulationEngineTest {
         int afterJumpSeq = engine.getHistoryEvents().get(engine.getHistoryEvents().size() - 1).getSequence();
         assertEquals(afterJumpSeq, engine.getViewedSeq());
     }
+
+    @Test
+    void jumpBackThenRequestDiscardsFutureEventsAndFollowsJumpPoint() {
+        SimulationEngine engine = new SimulationEngine();
+        Scenario scenario = new Scenario("Test");
+        scenario.addProcess(new Process("P1", 1));
+        scenario.addResource(new Resource("R1", 2, false));
+
+        engine.configure(scenario);
+        engine.request("P1", "R1", 1);
+        engine.release("P1", "R1", 1);
+        int totalBefore = engine.getHistoryEvents().size();
+
+        engine.jumpTo(0);
+        assertEquals(totalBefore, engine.getHistoryEvents().size());
+        assertEquals(0, engine.getViewedSeq());
+
+        engine.request("P1", "R1", 1);
+        List<HistoryEvent> events = engine.getHistoryEvents();
+        assertEquals(3, events.size());
+        assertEquals(0, events.get(0).getSequence());
+        assertEquals("Scenario loaded", events.get(0).getDescription());
+        assertEquals(1, events.get(1).getSequence());
+        assertEquals(2, events.get(2).getSequence());
+        assertEquals(2, engine.getViewedSeq());
+        assertTrue(events.stream().noneMatch(e -> e.getDescription().contains("released")));
+    }
+
+    @Test
+    void jumpAloneNeverTruncates() {
+        SimulationEngine engine = new SimulationEngine();
+        Scenario scenario = new Scenario("Test");
+        scenario.addProcess(new Process("P1", 1));
+        scenario.addResource(new Resource("R1", 2, false));
+
+        engine.configure(scenario);
+        engine.request("P1", "R1", 1);
+        engine.release("P1", "R1", 1);
+        int totalBefore = engine.getHistoryEvents().size();
+
+        engine.jumpTo(0);
+        assertEquals(totalBefore, engine.getHistoryEvents().size());
+        assertEquals(0, engine.getViewedSeq());
+
+        engine.jumpTo(1);
+        assertEquals(totalBefore, engine.getHistoryEvents().size());
+        assertEquals(1, engine.getViewedSeq());
+    }
+
+    @Test
+    void actionWithNoJumpDoesNotTruncate() {
+        SimulationEngine engine = new SimulationEngine();
+        Scenario scenario = new Scenario("Test");
+        scenario.addProcess(new Process("P1", 1));
+        scenario.addResource(new Resource("R1", 2, false));
+
+        engine.configure(scenario);
+        engine.request("P1", "R1", 1);
+        assertEquals(3, engine.getHistoryEvents().size());
+
+        engine.release("P1", "R1", 1);
+        assertEquals(4, engine.getHistoryEvents().size());
+        assertEquals(0, engine.getHistoryEvents().get(0).getSequence());
+        assertEquals(1, engine.getHistoryEvents().get(1).getSequence());
+        assertEquals(2, engine.getHistoryEvents().get(2).getSequence());
+        assertEquals(3, engine.getHistoryEvents().get(3).getSequence());
+        assertEquals(3, engine.getViewedSeq());
+    }
 }

@@ -166,4 +166,28 @@ class HistoryTest {
         assertNotEquals(e1, null);
         assertNotEquals(e1, "not an event");
     }
+
+    @Test
+    void truncateAfterRemovesEventsAboveSequenceAndNextAddUsesNextSequence() {
+        History history = new History();
+        Snapshot s1 = Snapshot.capture(new Scenario("S1"));
+        Snapshot s2 = Snapshot.capture(new Scenario("S2"));
+        Snapshot s3 = Snapshot.capture(new Scenario("S3"));
+
+        history.add(EventType.REQUEST, "Request 0", s1);
+        history.add(EventType.GRANT, "Grant 1", s2);
+        history.add(EventType.RELEASE, "Release 2", s3);
+        assertEquals(3, history.size());
+
+        assertThrows(IllegalArgumentException.class, () -> history.truncateAfter(-1));
+
+        history.truncateAfter(0);
+        assertEquals(1, history.size());
+        assertEquals(0, history.get(0).getSequence());
+
+        Snapshot s4 = Snapshot.capture(new Scenario("S4"));
+        history.add(EventType.BLOCK, "Block 1", s4);
+        assertEquals(2, history.size());
+        assertEquals(1, history.get(1).getSequence());
+    }
 }
