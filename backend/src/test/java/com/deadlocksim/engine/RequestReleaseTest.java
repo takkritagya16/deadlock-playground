@@ -267,3 +267,4 @@ class RequestReleaseTest {
         assertEquals(EventType.RELEASE, eventsAfterRel.get(3).getType());
     }
 }
+

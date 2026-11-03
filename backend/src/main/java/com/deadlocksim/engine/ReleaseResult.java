@@ -10,3 +10,4 @@ public record ReleaseResult(List<String> unblockedProcessIds) {
                 : Collections.emptyList();
     }
 }
+

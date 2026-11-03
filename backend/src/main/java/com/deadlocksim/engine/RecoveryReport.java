@@ -8,3 +8,4 @@ public record RecoveryReport(List<RecoveryRound> rounds, boolean resolved) {
         rounds = rounds != null ? Collections.unmodifiableList(rounds) : Collections.emptyList();
     }
 }
+

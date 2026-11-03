@@ -168,3 +168,4 @@ class SimulationEngineTest {
         assertThrows(UnsupportedOperationException.class, events::clear);
     }
 }
+

@@ -6,3 +6,4 @@ public enum RequestOutcome {
     DENIED_UNSAFE,
     REJECTED_PREVENTION
 }
+

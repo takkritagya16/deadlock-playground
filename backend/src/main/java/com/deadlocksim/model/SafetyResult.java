@@ -60,3 +60,4 @@ public final class SafetyResult {
         return Objects.hash(safe, reason, sequence);
     }
 }
+
