@@ -1,11 +1,18 @@
 package com.deadlocksim.api;
 
+import com.deadlocksim.engine.DetectReport;
+import com.deadlocksim.engine.RecoveryReport;
+import com.deadlocksim.engine.RecoveryRound;
 import com.deadlocksim.engine.ReleaseResult;
 import com.deadlocksim.engine.RequestResult;
 import com.deadlocksim.engine.SimulationEngine;
 import com.deadlocksim.engine.StepResult;
 import com.deadlocksim.model.Scenario;
 import com.deadlocksim.model.history.HistoryEvent;
+import com.deadlocksim.model.victim.PriorityPolicy;
+import com.deadlocksim.model.victim.RecoveryCostPolicy;
+import com.deadlocksim.model.victim.ResourcesHeldPolicy;
+import com.deadlocksim.model.victim.VictimPolicy;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
@@ -218,6 +225,102 @@ public class ApiServer {
                 executed.addProperty("description", sr.description());
                 data.add("executed", executed);
                 data.addProperty("finished", sr.finished());
+                data.add("state", JsonMapper.mapState(engine));
+                root.add("data", data);
+                sendJson(exchange, 200, root.toString());
+                return;
+            }
+
+            if ("/api/detect".equals(path)) {
+                if (!"POST".equalsIgnoreCase(method)) {
+                    ErrorMapper.sendError(exchange, ErrorCode.METHOD_NOT_ALLOWED, "Method not allowed: " + method);
+                    return;
+                }
+                parseJsonObjectOrEmpty(exchange);
+                DetectReport report = engine.detect();
+                JsonObject root = new JsonObject();
+                root.addProperty("ok", true);
+                JsonObject data = new JsonObject();
+                data.addProperty("strategy", report.strategy());
+                data.addProperty("deadlocked", report.result().isDeadlocked());
+                JsonArray processes = new JsonArray();
+                for (String pid : report.result().getProcessIds()) {
+                    processes.add(pid);
+                }
+                data.add("processes", processes);
+                if (report.result().getCycle().isEmpty()) {
+                    data.add("cycle", JsonNull.INSTANCE);
+                } else {
+                    JsonArray cycle = new JsonArray();
+                    for (String node : report.result().getCycle()) {
+                        cycle.add(node);
+                    }
+                    data.add("cycle", cycle);
+                }
+                data.add("state", JsonMapper.mapState(engine));
+                root.add("data", data);
+                sendJson(exchange, 200, root.toString());
+                return;
+            }
+
+            if ("/api/recover".equals(path)) {
+                if (!"POST".equalsIgnoreCase(method)) {
+                    ErrorMapper.sendError(exchange, ErrorCode.METHOD_NOT_ALLOWED, "Method not allowed: " + method);
+                    return;
+                }
+                JsonObject body = parseJsonObject(exchange);
+                String policyStr = "RECOVERY_COST";
+                if (body.has("policy") && !body.get("policy").isJsonNull()) {
+                    if (!body.get("policy").isJsonPrimitive() || !body.get("policy").getAsJsonPrimitive().isString()) {
+                        ErrorMapper.sendError(exchange, ErrorCode.INVALID_POLICY, "Invalid policy type");
+                        return;
+                    }
+                    policyStr = body.get("policy").getAsString();
+                }
+
+                VictimPolicy policy;
+                if ("PRIORITY".equalsIgnoreCase(policyStr)) {
+                    policy = new PriorityPolicy();
+                } else if ("RESOURCES_HELD".equalsIgnoreCase(policyStr)) {
+                    policy = new ResourcesHeldPolicy();
+                } else if ("RECOVERY_COST".equalsIgnoreCase(policyStr)) {
+                    policy = new RecoveryCostPolicy();
+                } else {
+                    ErrorMapper.sendError(exchange, ErrorCode.INVALID_POLICY, "Unknown policy: " + policyStr);
+                    return;
+                }
+
+                if (!body.has("strategy") || body.get("strategy").isJsonNull()
+                        || !body.get("strategy").isJsonPrimitive()
+                        || !body.get("strategy").getAsJsonPrimitive().isString()) {
+                    ErrorMapper.sendError(exchange, ErrorCode.INVALID_POLICY, "Strategy is required and must be a string");
+                    return;
+                }
+                String strategyStr = body.get("strategy").getAsString();
+                boolean usePreempt;
+                if ("TERMINATE".equalsIgnoreCase(strategyStr)) {
+                    usePreempt = false;
+                } else if ("PREEMPT".equalsIgnoreCase(strategyStr)) {
+                    usePreempt = true;
+                } else {
+                    ErrorMapper.sendError(exchange, ErrorCode.INVALID_POLICY, "Unknown strategy: " + strategyStr);
+                    return;
+                }
+
+                RecoveryReport rr = engine.recover(policy, usePreempt);
+                JsonObject root = new JsonObject();
+                root.addProperty("ok", true);
+                JsonObject data = new JsonObject();
+                JsonArray rounds = new JsonArray();
+                for (RecoveryRound round : rr.rounds()) {
+                    JsonObject rObj = new JsonObject();
+                    rObj.addProperty("victim", round.victimId());
+                    rObj.addProperty("strategy", round.strategy());
+                    rObj.addProperty("resolvedAfter", round.resolvedAfter());
+                    rounds.add(rObj);
+                }
+                data.add("rounds", rounds);
+                data.addProperty("resolved", rr.resolved());
                 data.add("state", JsonMapper.mapState(engine));
                 root.add("data", data);
                 sendJson(exchange, 200, root.toString());
