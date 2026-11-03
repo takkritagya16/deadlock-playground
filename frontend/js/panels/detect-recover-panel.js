@@ -1,4 +1,5 @@
 import { detect, recover, reset } from '../api/endpoints.js';
+import { showError, clearError } from './feedback.js';
 
 let initialized = false;
 let refreshHandler = null;
@@ -45,7 +46,7 @@ function createDetectSection(container) {
     group.appendChild(detectErrorLine);
 
     btnDetect.addEventListener('click', async () => {
-        detectErrorLine.textContent = '';
+        clearError('detect-error-line');
         detectResultLine.textContent = '';
         try {
             const data = await detect();
@@ -64,9 +65,7 @@ function createDetectSection(container) {
                 await refreshHandler();
             }
         } catch (err) {
-            const code = err.code || 'ERROR';
-            const msg = err.message || 'Detect failed';
-            detectErrorLine.textContent = `${code}: ${msg}`;
+            showError('detect-error-line', err);
         }
     });
 
@@ -108,6 +107,7 @@ function createRecoverSection(container) {
         opt.textContent = p.label;
         policySelect.appendChild(opt);
     }
+    policySelect.value = 'RECOVERY_COST';
     policyLabel.appendChild(policySelect);
     controlsRow.appendChild(policyLabel);
 
@@ -126,6 +126,7 @@ function createRecoverSection(container) {
         opt.textContent = s.label;
         strategySelect.appendChild(opt);
     }
+    strategySelect.value = 'TERMINATE';
     strategyLabel.appendChild(strategySelect);
     controlsRow.appendChild(strategyLabel);
 
@@ -152,7 +153,7 @@ function createRecoverSection(container) {
     group.appendChild(recoverErrorLine);
 
     btnRecover.addEventListener('click', async () => {
-        recoverErrorLine.textContent = '';
+        clearError('recover-error-line');
         recoverResultLine.textContent = '';
         const policy = policySelect.value;
         const strategy = strategySelect.value;
@@ -169,9 +170,7 @@ function createRecoverSection(container) {
                 await refreshHandler();
             }
         } catch (err) {
-            const code = err.code || 'ERROR';
-            const msg = err.message || 'Recover failed';
-            recoverErrorLine.textContent = `${code}: ${msg}`;
+            showError('recover-error-line', err);
         }
     });
 
@@ -210,7 +209,7 @@ function createResetSection(container) {
     group.appendChild(resetErrorLine);
 
     btnReset.addEventListener('click', async () => {
-        resetErrorLine.textContent = '';
+        clearError('reset-error-line');
         try {
             await reset(false);
             if (detectResultLine) detectResultLine.textContent = '';
@@ -230,15 +229,11 @@ function createResetSection(container) {
                             await refreshHandler();
                         }
                     } catch (innerErr) {
-                        const code = innerErr.code || 'ERROR';
-                        const msg = innerErr.message || 'Reset failed';
-                        resetErrorLine.textContent = `${code}: ${msg}`;
+                        showError('reset-error-line', innerErr);
                     }
                 }
             } else {
-                const code = err.code || 'ERROR';
-                const msg = err.message || 'Reset failed';
-                resetErrorLine.textContent = `${code}: ${msg}`;
+                showError('reset-error-line', err);
             }
         }
     });

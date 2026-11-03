@@ -1,4 +1,5 @@
 import { configureScenario } from '../api/endpoints.js';
+import { showError, clearError } from './feedback.js';
 
 export function renderConfigureForm(container, onConfigured) {
     if (!container) {
@@ -314,10 +315,10 @@ export function renderConfigureForm(container, onConfigured) {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        errorLine.textContent = '';
+        clearError('cfg-error-line');
         const parsed = parseForm();
         if (parsed.error) {
-            errorLine.textContent = parsed.error;
+            showError('cfg-error-line', { code: 'VALIDATION_ERROR', message: parsed.error });
             return;
         }
 
@@ -328,9 +329,7 @@ export function renderConfigureForm(container, onConfigured) {
                 onConfigured(state);
             }
         } catch (err) {
-            const code = err.code || 'VALIDATION_ERROR';
-            const msg = err.message || 'Configuration failed';
-            errorLine.textContent = `${code}: ${msg}`;
+            showError('cfg-error-line', err);
         }
     });
 

@@ -4,6 +4,7 @@ import {
     releaseResource,
     step
 } from '../api/endpoints.js';
+import { showError, clearError } from './feedback.js';
 
 let initialized = false;
 let refreshHandler = null;
@@ -21,6 +22,7 @@ let btnRequest = null;
 let btnRelease = null;
 let btnStep = null;
 let resultLine = null;
+let opErrorLine = null;
 
 let lastState = {
     mutualExclusion: false,
@@ -65,7 +67,7 @@ function createPreventionSection(container) {
     group.appendChild(prevErrorLine);
 
     async function handleToggleChange() {
-        prevErrorLine.textContent = '';
+        clearError('action-prev-error');
         const prevValues = { ...lastState };
         const newValues = {
             mutualExclusion: chkMutualExclusion.checked,
@@ -81,9 +83,7 @@ function createPreventionSection(container) {
                 await refreshHandler();
             }
         } catch (err) {
-            const code = err.code || 'ERROR';
-            const msg = err.message || 'Failed to update prevention toggles';
-            prevErrorLine.textContent = `${code}: ${msg}`;
+            showError('action-prev-error', err);
             chkMutualExclusion.checked = prevValues.mutualExclusion;
             chkHoldAndWait.checked = prevValues.holdAndWait;
             chkNoPreemption.checked = prevValues.noPreemption;
@@ -164,14 +164,20 @@ function createActionSection(container) {
     resultLine.className = 'action-result-line';
     group.appendChild(resultLine);
 
+    opErrorLine = document.createElement('div');
+    opErrorLine.id = 'action-op-error';
+    opErrorLine.className = 'error-line';
+    group.appendChild(opErrorLine);
+
     btnRequest.addEventListener('click', async () => {
+        clearError('action-op-error');
         resultLine.textContent = '';
         const process = procSelect.value;
         const resource = resSelect.value;
         const count = parseInt(countInput.value, 10) || 1;
 
         if (!process || !resource) {
-            resultLine.textContent = 'Please select a process and a resource.';
+            showError('action-op-error', { code: 'VALIDATION_ERROR', message: 'Please select a process and a resource.' });
             return;
         }
 
@@ -186,20 +192,19 @@ function createActionSection(container) {
                 resultLine.textContent = `${data.outcome}`;
             }
         } catch (err) {
-            const code = err.code || 'ERROR';
-            const msg = err.message || 'Request failed';
-            resultLine.textContent = `${code}: ${msg}`;
+            showError('action-op-error', err);
         }
     });
 
     btnRelease.addEventListener('click', async () => {
+        clearError('action-op-error');
         resultLine.textContent = '';
         const process = procSelect.value;
         const resource = resSelect.value;
         const count = parseInt(countInput.value, 10) || 1;
 
         if (!process || !resource) {
-            resultLine.textContent = 'Please select a process and a resource.';
+            showError('action-op-error', { code: 'VALIDATION_ERROR', message: 'Please select a process and a resource.' });
             return;
         }
 
@@ -214,13 +219,12 @@ function createActionSection(container) {
                 resultLine.textContent = 'Unblocked: none';
             }
         } catch (err) {
-            const code = err.code || 'ERROR';
-            const msg = err.message || 'Release failed';
-            resultLine.textContent = `${code}: ${msg}`;
+            showError('action-op-error', err);
         }
     });
 
     btnStep.addEventListener('click', async () => {
+        clearError('action-op-error');
         resultLine.textContent = '';
         try {
             const data = await step();
@@ -237,9 +241,7 @@ function createActionSection(container) {
                 resultLine.textContent = desc || 'Step executed';
             }
         } catch (err) {
-            const code = err.code || 'ERROR';
-            const msg = err.message || 'Step failed';
-            resultLine.textContent = `${code}: ${msg}`;
+            showError('action-op-error', err);
         }
     });
 
