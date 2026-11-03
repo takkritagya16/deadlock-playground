@@ -78,6 +78,7 @@ Every endpoint returns this object as `data.state`. It is the single source the 
 
 Field notes:
 
+- `step` is the viewed position, the sequence of the event the state corresponds to.
 - `state` is one of `RUNNING`, `WAITING`, `COMPLETED`, `TERMINATED`. `deadlocked` is a separate flag, as decided in the design.
 - `graph` follows the Cytoscape.js `data` wrapper, so it can be passed to Cytoscape without conversion.
 - `inCycle` is true for edges that belong to a detected cycle. It is false until detection runs.
