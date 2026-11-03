@@ -167,5 +167,27 @@ class SimulationEngineTest {
         assertThrows(UnsupportedOperationException.class, () -> events.remove(0));
         assertThrows(UnsupportedOperationException.class, events::clear);
     }
-}
 
+    @Test
+    void viewedSeqTracksNewestSequenceAndJumps() {
+        SimulationEngine engine = new SimulationEngine();
+        Scenario scenario = new Scenario("Test");
+        scenario.addProcess(new Process("P1", 1));
+        scenario.addResource(new Resource("R1", 2, false));
+
+        engine.configure(scenario);
+        assertEquals(0, engine.getViewedSeq());
+
+        engine.request("P1", "R1", 1);
+        engine.release("P1", "R1", 1);
+        int newestSeq = engine.getHistoryEvents().get(engine.getHistoryEvents().size() - 1).getSequence();
+        assertEquals(newestSeq, engine.getViewedSeq());
+
+        engine.jumpTo(0);
+        assertEquals(0, engine.getViewedSeq());
+
+        engine.request("P1", "R1", 1);
+        int afterJumpSeq = engine.getHistoryEvents().get(engine.getHistoryEvents().size() - 1).getSequence();
+        assertEquals(afterJumpSeq, engine.getViewedSeq());
+    }
+}

@@ -211,6 +211,27 @@ class StateMappingTest {
         assertEquals(1, notInCycleCount);
     }
 
+    @Test
+    void stateStepReflectsViewedSeqAfterJump() throws IOException, InterruptedException {
+        Scenario scenario = new Scenario("JumpStepTest");
+        scenario.addProcess(new Process("P1", 1));
+        scenario.addResource(new Resource("R1", 2, false));
+        engine.configure(scenario);
+        engine.request("P1", "R1", 1);
+        engine.jumpTo(0);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + boundPort + "/api/state"))
+                .GET()
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, response.statusCode());
+        JsonObject root = gson.fromJson(response.body(), JsonObject.class);
+        JsonObject state = root.getAsJsonObject("data").getAsJsonObject("state");
+        assertEquals(0, state.get("step").getAsInt());
+    }
+
     private static boolean isCycleEdge(String source, String target) {
         return (source.equals("P1") && target.equals("R2"))
                 || (source.equals("R2") && target.equals("P2"))

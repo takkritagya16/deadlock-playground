@@ -103,9 +103,7 @@ public class JsonMapper {
         scenarioObj.addProperty("name", scenario.getName());
         root.add("scenario", scenarioObj);
 
-        List<HistoryEvent> events = engine.getHistoryEvents();
-        int step = events.isEmpty() ? 0 : events.get(events.size() - 1).getSequence();
-        root.addProperty("step", step);
+        root.addProperty("step", engine.getViewedSeq());
 
         JsonObject prevObj = new JsonObject();
         PreventionToggles toggles = scenario.getPreventionToggles();

@@ -27,11 +27,23 @@ public class SimulationEngine {
     private Scenario scenario;
     final History history;
     private Snapshot initialSnapshot;
+    private int viewedSeq;
 
     public SimulationEngine() {
         this.scenario = null;
         this.history = new History();
         this.initialSnapshot = null;
+        this.viewedSeq = 0;
+    }
+
+    private void updateViewedSeq() {
+        if (this.history.size() > 0) {
+            this.viewedSeq = this.history.events().get(this.history.size() - 1).getSequence();
+        }
+    }
+
+    public int getViewedSeq() {
+        return viewedSeq;
     }
 
     public void configure(Scenario s) {
@@ -47,6 +59,7 @@ public class SimulationEngine {
         this.initialSnapshot = Snapshot.capture(s);
         this.history.clear();
         this.history.add(EventType.STATE_CHANGE, "Scenario loaded", this.initialSnapshot);
+        updateViewedSeq();
     }
 
     public void reset(boolean confirmed) {
@@ -60,6 +73,7 @@ public class SimulationEngine {
         this.initialSnapshot.restoreInto(this.scenario);
         this.history.clear();
         this.history.add(EventType.STATE_CHANGE, "Scenario reset", this.initialSnapshot);
+        updateViewedSeq();
     }
 
     public RequestResult request(String processId, String resourceId, int count) {
@@ -106,6 +120,7 @@ public class SimulationEngine {
                 String reason = "Circular wait prevention: resource " + resourceId + " (index " + reqIndex
                         + ") is not greater than highest held index " + highestHeldIndex;
                 history.add(EventType.BLOCK, reason, Snapshot.capture(scenario));
+                updateViewedSeq();
                 return new RequestResult(RequestOutcome.REJECTED_PREVENTION, reason);
             }
         }
@@ -113,6 +128,7 @@ public class SimulationEngine {
         if (scenario.getPreventionToggles().isHoldAndWait() && process.totalHeld() > 0) {
             String reason = "Hold and wait prevention: process " + processId + " already holds resources";
             history.add(EventType.BLOCK, reason, Snapshot.capture(scenario));
+            updateViewedSeq();
             return new RequestResult(RequestOutcome.REJECTED_PREVENTION, reason);
         }
 
@@ -120,6 +136,7 @@ public class SimulationEngine {
             process.holdInstances(resourceId, count);
             String desc = "Granted " + count + " of shared resource " + resourceId + " to " + processId;
             history.add(EventType.GRANT, desc, Snapshot.capture(scenario));
+            updateViewedSeq();
             return new RequestResult(RequestOutcome.GRANTED, desc);
         }
 
@@ -128,6 +145,7 @@ public class SimulationEngine {
             process.setWaitingFor(resourceId, count);
             String desc = "Process " + processId + " blocked waiting for " + count + " of " + resourceId;
             history.add(EventType.BLOCK, desc, Snapshot.capture(scenario));
+            updateViewedSeq();
             return new RequestResult(RequestOutcome.BLOCKED, desc);
         }
 
@@ -136,6 +154,7 @@ public class SimulationEngine {
             process.setState(ProcessState.WAITING);
             process.setWaitingFor(resourceId, count);
             history.add(EventType.AVOIDANCE_CHECK, sr.getReason(), Snapshot.capture(scenario));
+            updateViewedSeq();
             return new RequestResult(RequestOutcome.DENIED_UNSAFE, sr.getReason());
         }
 
@@ -144,6 +163,7 @@ public class SimulationEngine {
         history.add(EventType.AVOIDANCE_CHECK, sr.getReason(), Snapshot.capture(scenario));
         String grantDesc = "Granted " + count + " of " + resourceId + " to " + processId;
         history.add(EventType.GRANT, grantDesc, Snapshot.capture(scenario));
+        updateViewedSeq();
         return new RequestResult(RequestOutcome.GRANTED, grantDesc);
     }
 
@@ -175,6 +195,7 @@ public class SimulationEngine {
         history.add(EventType.RELEASE, "Process " + processId + " released " + count + " of " + resourceId, Snapshot.capture(scenario));
 
         List<String> unblocked = wakeWaitingProcesses();
+        updateViewedSeq();
         return new ReleaseResult(unblocked);
     }
 
@@ -273,6 +294,7 @@ public class SimulationEngine {
         boolean finished = scenario.getProcesses().stream()
                 .allMatch(p -> p.getNextOperationIndex() >= scenario.getOperations(p.getId()).size());
 
+        updateViewedSeq();
         return new StepResult(description, finished);
     }
 
@@ -296,6 +318,7 @@ public class SimulationEngine {
                 ? "Deadlock detected: " + result.getProcessIds()
                 : "No deadlock detected";
         history.add(EventType.DETECT, desc, Snapshot.capture(scenario));
+        updateViewedSeq();
 
         return new DetectReport(strategyName, result);
     }
@@ -380,6 +403,7 @@ public class SimulationEngine {
             }
         }
 
+        updateViewedSeq();
         return new RecoveryReport(rounds, resolved);
     }
 
@@ -401,5 +425,6 @@ public class SimulationEngine {
         }
         Snapshot snapshot = history.jumpTo(seq);
         snapshot.restoreInto(scenario);
+        this.viewedSeq = seq;
     }
 }
