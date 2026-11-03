@@ -1,11 +1,18 @@
 package com.deadlocksim.api;
 
 import com.deadlocksim.engine.SimulationEngine;
+import com.deadlocksim.model.Scenario;
+import com.deadlocksim.model.history.HistoryEvent;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -71,9 +78,103 @@ public class ApiServer {
                 return;
             }
 
+            if ("/api/scenario".equals(path)) {
+                if (!"POST".equalsIgnoreCase(method)) {
+                    ErrorMapper.sendError(exchange, ErrorCode.METHOD_NOT_ALLOWED, "Method not allowed: " + method);
+                    return;
+                }
+                JsonObject body = parseJsonObject(exchange);
+                Scenario scenario = JsonMapper.parseScenario(body);
+                engine.configure(scenario);
+                JsonObject root = new JsonObject();
+                root.addProperty("ok", true);
+                JsonObject data = new JsonObject();
+                data.add("state", JsonMapper.mapState(engine));
+                root.add("data", data);
+                sendJson(exchange, 200, root.toString());
+                return;
+            }
+
+            if ("/api/reset".equals(path)) {
+                if (!"POST".equalsIgnoreCase(method)) {
+                    ErrorMapper.sendError(exchange, ErrorCode.METHOD_NOT_ALLOWED, "Method not allowed: " + method);
+                    return;
+                }
+                JsonObject body = parseJsonObjectOrEmpty(exchange);
+                boolean confirmed = body.has("confirmed") && body.get("confirmed").getAsBoolean();
+                engine.reset(confirmed);
+                JsonObject root = new JsonObject();
+                root.addProperty("ok", true);
+                JsonObject data = new JsonObject();
+                data.add("state", JsonMapper.mapState(engine));
+                root.add("data", data);
+                sendJson(exchange, 200, root.toString());
+                return;
+            }
+
+            if ("/api/history".equals(path)) {
+                if (!"GET".equalsIgnoreCase(method)) {
+                    ErrorMapper.sendError(exchange, ErrorCode.METHOD_NOT_ALLOWED, "Method not allowed: " + method);
+                    return;
+                }
+                JsonArray eventsArray = new JsonArray();
+                for (HistoryEvent e : engine.getHistoryEvents()) {
+                    JsonObject ev = new JsonObject();
+                    ev.addProperty("seq", e.getSequence());
+                    ev.addProperty("type", e.getType().name());
+                    ev.addProperty("description", e.getDescription());
+                    eventsArray.add(ev);
+                }
+                JsonObject root = new JsonObject();
+                root.addProperty("ok", true);
+                JsonObject data = new JsonObject();
+                data.add("events", eventsArray);
+                root.add("data", data);
+                sendJson(exchange, 200, root.toString());
+                return;
+            }
+
             ErrorMapper.sendError(exchange, ErrorCode.NOT_FOUND, "Not found: " + path);
         } catch (Throwable t) {
             ErrorMapper.sendError(exchange, t);
+        }
+    }
+
+    private JsonObject parseJsonObject(HttpExchange exchange) throws IOException {
+        String body;
+        try (InputStream is = exchange.getRequestBody()) {
+            body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        if (body.isBlank()) {
+            throw new IllegalArgumentException("Request body must not be empty");
+        }
+        try {
+            JsonElement el = JsonParser.parseString(body);
+            if (!el.isJsonObject()) {
+                throw new IllegalArgumentException("Request body must be a JSON object");
+            }
+            return el.getAsJsonObject();
+        } catch (JsonSyntaxException e) {
+            throw new IllegalArgumentException("Malformed JSON body: " + e.getMessage());
+        }
+    }
+
+    private JsonObject parseJsonObjectOrEmpty(HttpExchange exchange) throws IOException {
+        String body;
+        try (InputStream is = exchange.getRequestBody()) {
+            body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        if (body.isBlank()) {
+            return new JsonObject();
+        }
+        try {
+            JsonElement el = JsonParser.parseString(body);
+            if (!el.isJsonObject()) {
+                throw new IllegalArgumentException("Request body must be a JSON object");
+            }
+            return el.getAsJsonObject();
+        } catch (JsonSyntaxException e) {
+            throw new IllegalArgumentException("Malformed JSON body: " + e.getMessage());
         }
     }
 

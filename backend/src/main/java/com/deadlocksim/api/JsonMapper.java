@@ -3,6 +3,7 @@ package com.deadlocksim.api;
 import com.deadlocksim.engine.SimulationEngine;
 import com.deadlocksim.model.Graph;
 import com.deadlocksim.model.Operation;
+import com.deadlocksim.model.OperationType;
 import com.deadlocksim.model.PreventionToggles;
 import com.deadlocksim.model.Process;
 import com.deadlocksim.model.Resource;
@@ -10,6 +11,7 @@ import com.deadlocksim.model.Scenario;
 import com.deadlocksim.model.history.HistoryEvent;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 
@@ -25,6 +27,69 @@ public class JsonMapper {
 
     public static Gson getGson() {
         return GSON;
+    }
+
+    public static Scenario parseScenario(JsonObject body) {
+        if (body == null) {
+            throw new IllegalArgumentException("Request body must not be null");
+        }
+        if (body.has("preset")) {
+            throw new IllegalArgumentException("Preset not available yet");
+        }
+        if (!body.has("name") || body.get("name").getAsString().isBlank()) {
+            throw new IllegalArgumentException("Scenario name must not be blank");
+        }
+        Scenario s = new Scenario(body.get("name").getAsString());
+
+        if (body.has("prevention") && body.get("prevention").isJsonObject()) {
+            JsonObject prev = body.getAsJsonObject("prevention");
+            PreventionToggles toggles = s.getPreventionToggles();
+            if (prev.has("mutualExclusion")) {
+                toggles.setMutualExclusion(prev.get("mutualExclusion").getAsBoolean());
+            }
+            if (prev.has("holdAndWait")) {
+                toggles.setHoldAndWait(prev.get("holdAndWait").getAsBoolean());
+            }
+            if (prev.has("noPreemption")) {
+                toggles.setNoPreemption(prev.get("noPreemption").getAsBoolean());
+            }
+            if (prev.has("circularWait")) {
+                toggles.setCircularWait(prev.get("circularWait").getAsBoolean());
+            }
+            s.setPreventionToggles(toggles);
+        }
+
+        if (body.has("resources") && body.get("resources").isJsonArray()) {
+            for (JsonElement el : body.getAsJsonArray("resources")) {
+                JsonObject rObj = el.getAsJsonObject();
+                String id = rObj.get("id").getAsString();
+                int total = rObj.get("total").getAsInt();
+                boolean shareable = rObj.has("shareable") && rObj.get("shareable").getAsBoolean();
+                s.addResource(new Resource(id, total, shareable));
+            }
+        }
+
+        if (body.has("processes") && body.get("processes").isJsonArray()) {
+            for (JsonElement el : body.getAsJsonArray("processes")) {
+                JsonObject pObj = el.getAsJsonObject();
+                String pid = pObj.get("id").getAsString();
+                int priority = pObj.has("priority") ? pObj.get("priority").getAsInt() : 1;
+                s.addProcess(new Process(pid, priority));
+
+                if (pObj.has("operations") && pObj.get("operations").isJsonArray()) {
+                    for (JsonElement opEl : pObj.getAsJsonArray("operations")) {
+                        JsonObject opObj = opEl.getAsJsonObject();
+                        String typeStr = opObj.get("type").getAsString();
+                        OperationType type = OperationType.valueOf(typeStr.toUpperCase());
+                        String resId = opObj.get("resource").getAsString();
+                        int count = opObj.has("count") ? opObj.get("count").getAsInt() : 1;
+                        s.addOperation(new Operation(pid, type, resId, count));
+                    }
+                }
+            }
+        }
+
+        return s;
     }
 
     public static JsonObject mapState(SimulationEngine engine) {
@@ -158,4 +223,3 @@ public class JsonMapper {
         return root;
     }
 }
-
