@@ -1,4 +1,4 @@
-﻿# 8. JSON API Contract
+# 8. JSON API Contract
 
 This file defines the HTTP interface between the Java backend (`com.sun.net.httpserver`) and the browser frontend (vanilla JS with Cytoscape.js). Both sides build against this document, so the shapes below are fixed unless this file is changed first.
 
@@ -28,6 +28,7 @@ Error codes:
 |---|---|
 | `VALIDATION_ERROR` | Duplicate IDs, zero instances, or a request larger than the total instances (UC1, alternate 5a). |
 | `PREVENTION_VIOLATION` | A prevention rule rejects a request (UC2, alternate 2a). |
+| `PREEMPTION_VIOLATION` | Preemption is attempted but victim holds no resources to preempt. |
 | `NOT_HELD` | A release targets a resource the process does not hold (UC3, alternate 1a). |
 | `NO_OPERATIONS` | Step is called when the scenario is finished (UC4, alternate 2a). |
 | `NO_DEADLOCK` | Recover is called without a detected deadlock (UC6 precondition). |
@@ -125,6 +126,8 @@ Request, preset:
 
 Response: `{ "ok": true, "data": { "state": { } } }`. History is reset, and the initial snapshot becomes the first event.
 
+Note: presets are not implemented yet and return `VALIDATION_ERROR`.
+
 ### POST /api/request (UC2: Request resource)
 
 Request:
@@ -141,13 +144,13 @@ Response:
   "data": {
     "outcome": "GRANTED",
     "reason": "Safe sequence found.",
-    "safety": { "safe": true, "sequence": ["P1", "P2", "P3"], "blockingReason": null },
+    "safety": null,
     "state": { }
   }
 }
 ```
 
-`outcome` is `GRANTED` or `BLOCKED`. When the state is unsafe, `safety.safe` is false, `sequence` is null, and `blockingReason` describes the process and resource that cannot finish.
+`outcome` is one of `GRANTED`, `BLOCKED`, `DENIED_UNSAFE`, `REJECTED_PREVENTION`. In this version, `safety` is null. When safety analysis is returned, `safety.safe` is false, `sequence` is null, and `blockingReason` describes the process and resource that cannot finish.
 
 ### POST /api/release (UC3: Release resource)
 
@@ -171,7 +174,7 @@ Response:
 {
   "ok": true,
   "data": {
-    "executed": { "process": "P1", "type": "REQUEST", "resource": "R1", "count": 1 },
+    "executed": { "description": "P1 requested and was granted 1 of R1" },
     "finished": false,
     "state": { }
   }
