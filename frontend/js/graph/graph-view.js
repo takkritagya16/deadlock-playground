@@ -31,6 +31,11 @@ function getEdgeCount(ele) {
     return 1;
 }
 
+function isProcessDeadlocked(ele) {
+    const proc = currentProcesses.find(p => p.id === ele.data('id'));
+    return proc ? Boolean(proc.deadlocked) : false;
+}
+
 export function getCy() {
     return cy;
 }
@@ -60,6 +65,7 @@ export function renderGraph(state) {
                         'color': '#000000',
                         'text-valign': 'center',
                         'text-halign': 'center',
+                        'text-wrap': 'wrap',
                         'padding': '8px',
                         'width': 'label',
                         'height': 'label'
@@ -70,9 +76,19 @@ export function renderGraph(state) {
                     style: {
                         'shape': 'ellipse',
                         'background-color': '#ffffff',
-                        'border-width': 1,
-                        'border-color': '#000000',
-                        'label': 'data(id)'
+                        'border-width': function(ele) {
+                            return isProcessDeadlocked(ele) ? 3 : 1;
+                        },
+                        'border-color': function(ele) {
+                            return isProcessDeadlocked(ele) ? '#8b2e2e' : '#000000';
+                        },
+                        'label': function(ele) {
+                            const id = ele.data('id');
+                            if (isProcessDeadlocked(ele)) {
+                                return `${id}\nDEADLOCKED`;
+                            }
+                            return id;
+                        }
                     }
                 },
                 {
@@ -123,6 +139,14 @@ export function renderGraph(state) {
                     selector: 'edge[kind = "request"]',
                     style: {
                         'line-style': 'dashed'
+                    }
+                },
+                {
+                    selector: 'edge[?inCycle]',
+                    style: {
+                        'line-color': '#8b2e2e',
+                        'width': 3,
+                        'target-arrow-color': '#8b2e2e'
                     }
                 }
             ]
