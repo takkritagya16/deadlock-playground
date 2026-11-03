@@ -55,6 +55,25 @@ public class ApiServer {
             return;
         }
 
+        if ("/api/state".equals(path)) {
+            if (!"GET".equalsIgnoreCase(method)) {
+                sendError(exchange, 405, "METHOD_NOT_ALLOWED", "Method not allowed: " + method);
+                return;
+            }
+            if (engine.getScenario() == null) {
+                sendError(exchange, 409, "NO_SCENARIO", "No scenario loaded");
+                return;
+            }
+            JsonObject stateObj = JsonMapper.mapState(engine);
+            JsonObject root = new JsonObject();
+            root.addProperty("ok", true);
+            JsonObject data = new JsonObject();
+            data.add("state", stateObj);
+            root.add("data", data);
+            sendJson(exchange, 200, root.toString());
+            return;
+        }
+
         sendError(exchange, 404, "NOT_FOUND", "Not found: " + path);
     }
 
