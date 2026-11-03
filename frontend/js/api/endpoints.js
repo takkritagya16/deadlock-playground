@@ -15,3 +15,15 @@ export async function reset(confirmed = false) {
 export async function getHistory() {
     return request('GET', '/api/history');
 }
+
+export async function requestResource(process, resource, count) {
+    return request('POST', '/api/request', { process, resource, count });
+}
+
+export async function releaseResource(process, resource, count) {
+    return request('POST', '/api/release', { process, resource, count });
+}
+
+export async function step() {
+    return request('POST', '/api/step', {});
+}
