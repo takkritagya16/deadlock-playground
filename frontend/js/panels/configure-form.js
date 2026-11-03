@@ -1,3 +1,5 @@
+import { configureScenario } from '../api/endpoints.js';
+
 export function renderConfigureForm(container, onConfigured) {
     if (!container) {
         return;
@@ -319,8 +321,16 @@ export function renderConfigureForm(container, onConfigured) {
             return;
         }
 
-        if (typeof onConfigured === 'function') {
-            onConfigured(parsed.body);
+        try {
+            const data = await configureScenario(parsed.body);
+            const state = (data && data.state) ? data.state : data;
+            if (typeof onConfigured === 'function') {
+                onConfigured(state);
+            }
+        } catch (err) {
+            const code = err.code || 'VALIDATION_ERROR';
+            const msg = err.message || 'Configuration failed';
+            errorLine.textContent = `${code}: ${msg}`;
         }
     });
 

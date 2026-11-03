@@ -2,6 +2,7 @@ import { getState } from './api/endpoints.js';
 import { renderProcessPanel } from './panels/process-panel.js';
 import { renderResourcePanel } from './panels/resource-panel.js';
 import { renderStatusLine } from './panels/status-line.js';
+import { renderConfigureForm } from './panels/configure-form.js';
 import { renderGraph } from './graph/graph-view.js';
 
 export async function refresh() {
@@ -29,8 +30,18 @@ export async function refresh() {
     }
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', refresh);
-} else {
+export function init() {
+    const configPanel = document.getElementById('configure-panel');
+    if (configPanel) {
+        renderConfigureForm(configPanel, async () => {
+            await refresh();
+        });
+    }
     refresh();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
 }
