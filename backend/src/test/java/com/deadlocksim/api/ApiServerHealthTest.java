@@ -87,3 +87,4 @@ class ApiServerHealthTest {
         assertEquals("NOT_FOUND", body.getAsJsonObject("error").get("code").getAsString());
     }
 }
+

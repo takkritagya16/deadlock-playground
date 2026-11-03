@@ -237,3 +237,4 @@ class ErrorMapperTest {
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 }
+
