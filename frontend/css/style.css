@@ -183,6 +183,11 @@ button:focus-visible {
   margin: 0;
 }
 
+.deadlocked {
+  font-weight: bold;
+  color: var(--color-text);
+}
+
 @media (max-width: 800px) {
   .app-container {
     padding: 1rem;
