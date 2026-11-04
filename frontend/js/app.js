@@ -142,24 +142,6 @@ function setupHistoryControls() {
 }
 
 export function init() {
-    const historyOverlay = document.getElementById('history-overlay');
-    const historyButton = document.getElementById('btn-history');
-    const historyClose = document.getElementById('btn-history-close');
-    historyButton?.addEventListener('click', () => {
-        historyOverlay.hidden = false;
-        historyClose.focus();
-    });
-    historyClose?.addEventListener('click', () => {
-        historyOverlay.hidden = true;
-        historyButton.focus();
-    });
-    historyOverlay?.addEventListener('click', (event) => {
-        if (event.target === historyOverlay) historyClose.click();
-    });
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && historyOverlay && !historyOverlay.hidden) historyClose.click();
-    });
-
     const configPanel = document.getElementById('configure-panel');
     if (configPanel) {
         renderConfigureForm(configPanel, async () => {

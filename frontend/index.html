@@ -14,7 +14,6 @@
   <div class="app-container">
     <header class="app-header">
       <h1>Deadlock Visualisation and Recovery Simulator</h1>
-      <button type="button" id="btn-history">Event History</button>
     </header>
 
     <main class="main-area">
@@ -33,53 +32,56 @@
       </div>
 
       <aside class="side-column">
-        <section id="action-panel" class="panel">
-          <div class="panel-header">
-            <h2>Actions</h2>
-          </div>
-          <div class="panel-content"></div>
-        </section>
+        <div class="side-col side-col-1">
+          <section id="action-panel" class="panel">
+            <div class="panel-header">
+              <h2>Actions</h2>
+            </div>
+            <div class="panel-content"></div>
+          </section>
 
-        <section id="detect-recover-panel" class="panel">
-          <div class="panel-header">
-            <h2>Detect and Recover</h2>
-          </div>
-          <div class="panel-content"></div>
-        </section>
+          <section id="process-panel" class="panel">
+            <div class="panel-header">
+              <h2>Processes</h2>
+            </div>
+            <div class="panel-content">
+              <p class="placeholder-text">No processes loaded.</p>
+            </div>
+          </section>
 
-        <section id="process-panel" class="panel">
-          <div class="panel-header">
-            <h2>Processes</h2>
-          </div>
-          <div class="panel-content">
-            <p class="placeholder-text">No processes loaded.</p>
-          </div>
-        </section>
+          <section id="resource-panel" class="panel">
+            <div class="panel-header">
+              <h2>Resources</h2>
+            </div>
+            <div class="panel-content">
+              <p class="placeholder-text">No resources loaded.</p>
+            </div>
+          </section>
+        </div>
 
-        <section id="resource-panel" class="panel">
-          <div class="panel-header">
-            <h2>Resources</h2>
-          </div>
-          <div class="panel-content">
-            <p class="placeholder-text">No resources loaded.</p>
-          </div>
-        </section>
+        <div class="side-col side-col-2">
+          <section id="detect-recover-panel" class="panel">
+            <div class="panel-header">
+              <h2>Detect and Recover</h2>
+            </div>
+            <div class="panel-content"></div>
+          </section>
+
+          <section id="history-section" class="panel">
+            <div class="panel-header">
+              <h2>Event History</h2>
+              <div class="history-controls">
+                <button type="button" id="btn-step-back">Step back</button>
+                <button type="button" id="btn-step-forward">Step forward</button>
+              </div>
+            </div>
+            <div id="history-panel" class="panel-content">
+              <p class="placeholder-text">No events recorded yet.</p>
+            </div>
+          </section>
+        </div>
       </aside>
     </main>
-
-    <div id="history-overlay" class="history-overlay" hidden>
-      <section id="history-panel" class="panel history-region" role="dialog" aria-modal="true" aria-labelledby="history-heading">
-        <div class="panel-header">
-          <h2 id="history-heading">Event History</h2>
-          <div class="history-controls">
-            <button type="button" id="btn-step-back">Step back</button>
-            <button type="button" id="btn-step-forward">Step forward</button>
-            <button type="button" id="btn-history-close" aria-label="Close Event History">Close</button>
-          </div>
-        </div>
-        <div class="panel-content"><p class="placeholder-text">No events recorded yet.</p></div>
-      </section>
-    </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
