@@ -26,6 +26,8 @@ export function renderHistoryPanel(events, currentSeq, onJump) {
         const row = document.createElement('div');
         row.className = 'history-row';
         row.dataset.seq = String(ev.seq);
+        row.setAttribute('tabindex', '0');
+        row.setAttribute('role', 'button');
 
         if (currentSeq !== undefined && currentSeq !== null && ev.seq === currentSeq) {
             row.classList.add('current-event');
@@ -53,6 +55,12 @@ export function renderHistoryPanel(events, currentSeq, onJump) {
             row.style.cursor = 'pointer';
             row.addEventListener('click', () => {
                 onJump(ev.seq);
+            });
+            row.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onJump(ev.seq);
+                }
             });
         }
 

@@ -26,6 +26,28 @@
   box-sizing: border-box;
 }
 
+
+.skip-link {
+  position: absolute;
+  top: -999px;
+  left: 1rem;
+  background-color: #ffffff;
+  color: #000000;
+  padding: 0.5rem 1rem;
+  border: 2px solid #222222;
+  border-radius: var(--radius-sm);
+  z-index: 1000;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 1rem;
+  outline: 2px solid #222222;
+  outline-offset: 2px;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -136,8 +158,21 @@ button:active {
   background-color: #e2e8f0;
 }
 
-button:focus-visible {
-  outline: 2px solid var(--color-focus);
+:focus,
+:focus-visible,
+button:focus,
+button:focus-visible,
+input:focus,
+input:focus-visible,
+select:focus,
+select:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+a:focus,
+a:focus-visible,
+[tabindex]:focus,
+[tabindex]:focus-visible {
+  outline: 2px solid #222222;
   outline-offset: 2px;
 }
 
@@ -321,6 +356,12 @@ button:focus-visible {
   font-weight: 600;
 }
 
+.history-row:focus,
+.history-row:focus-visible {
+  outline: 2px solid #222222;
+  outline-offset: 2px;
+}
+
 .history-seq {
   font-family: var(--font-mono);
   color: var(--color-text-muted);
@@ -444,7 +485,8 @@ button:focus-visible {
 #form-configure input[type="number"]:focus,
 #form-configure textarea:focus {
   border-color: var(--color-focus);
-  outline: none;
+  outline: 2px solid #222222;
+  outline-offset: 2px;
   box-shadow: 0 0 0 1px var(--color-focus);
 }
 
