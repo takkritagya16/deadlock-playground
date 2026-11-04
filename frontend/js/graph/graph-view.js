@@ -1,5 +1,6 @@
 let cy = null;
 let currentProcesses = [];
+let resizeObserver = null;
 
 if (typeof cytoscape !== 'undefined' && typeof cytoscapeDagre !== 'undefined') {
     cytoscape.use(cytoscapeDagre);
@@ -154,6 +155,18 @@ export function renderGraph(state) {
         if (typeof window !== 'undefined') {
             window.cy = cy;
         }
+
+        if (!resizeObserver && typeof ResizeObserver !== 'undefined') {
+            resizeObserver = new ResizeObserver(() => {
+                if (cy) {
+                    cy.resize();
+                    if (cy.elements().length > 0) {
+                        cy.fit(undefined, 30);
+                    }
+                }
+            });
+            resizeObserver.observe(container);
+        }
     }
 
     cy.elements().remove();
@@ -177,8 +190,10 @@ export function renderGraph(state) {
         padding: 30
     });
     layout.on('layoutstop', () => {
-        cy.fit(30);
+        cy.resize();
+        cy.fit(undefined, 30);
     });
     layout.run();
-    cy.fit(30);
+    cy.resize();
+    cy.fit(undefined, 30);
 }
