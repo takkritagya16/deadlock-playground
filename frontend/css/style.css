@@ -2,12 +2,12 @@
   --color-bg: #f8fafc;
   --color-card-bg: #ffffff;
   --color-text: #0f172a;
-  --color-text-muted: #64748b;
-  --color-text-subtle: #94a3b8;
+  --color-text-muted: #334155;
+  --color-text-subtle: #475569;
   --color-border: #e2e8f0;
   --color-border-dark: #0f172a;
   --color-focus: #0f172a;
-  --color-error: #dc2626;
+  --color-error: #b91c1c;
   --color-deadlock-bg: #fef2f2;
   --color-deadlock-border: #fecaca;
   --color-deadlock-text: #991b1b;
@@ -283,7 +283,7 @@ a:focus-visible,
   box-shadow: var(--shadow-sm);
   font-family: var(--font-mono);
   font-size: 0.8125rem;
-  color: var(--color-text-muted);
+  color: var(--color-text);
 }
 
 .history-region {
@@ -388,6 +388,12 @@ a:focus-visible,
   flex: 1;
 }
 
+
+::placeholder {
+  color: var(--color-text-subtle);
+  opacity: 1;
+}
+
 .placeholder-text {
   color: var(--color-text-subtle);
   font-style: normal;
@@ -465,7 +471,7 @@ a:focus-visible,
 #form-configure label {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: var(--color-text-muted);
+  color: var(--color-text);
 }
 
 #form-configure input[type="text"],
@@ -631,7 +637,7 @@ a:focus-visible,
   align-items: center;
   gap: 0.35rem;
   font-size: 0.8125rem;
-  color: var(--color-text-muted);
+  color: var(--color-text);
 }
 
 .action-inputs-row select {
