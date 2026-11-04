@@ -171,8 +171,14 @@ export function renderGraph(state) {
 
     cy.add([...nodes, ...edges]);
 
-    cy.layout({
+    const layout = cy.layout({
         name: 'dagre',
-        rankDir: 'LR'
-    }).run();
+        rankDir: 'LR',
+        padding: 30
+    });
+    layout.on('layoutstop', () => {
+        cy.fit(30);
+    });
+    layout.run();
+    cy.fit(30);
 }

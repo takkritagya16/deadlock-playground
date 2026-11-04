@@ -218,9 +218,7 @@ a:focus-visible,
   border-radius: var(--radius-lg);
   background-color: var(--color-card-bg);
   box-shadow: var(--shadow-sm);
-  height: 440px;
-  max-height: calc(100vh - 220px);
-  min-height: 320px;
+  min-height: 520px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -714,8 +712,7 @@ a:focus-visible,
 
   .graph-region {
     position: static;
-    height: 380px;
-    min-height: 300px;
+    min-height: 520px;
     max-height: none;
   }
 
