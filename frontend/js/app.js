@@ -160,15 +160,45 @@ export function init() {
         if (event.key === 'Escape' && historyOverlay && !historyOverlay.hidden) historyClose.click();
     });
 
-    document.getElementById('btn-configure')?.addEventListener('click', () => {
-        document.getElementById('form-configure')?.requestSubmit();
-    });
-
     const configPanel = document.getElementById('configure-panel');
     if (configPanel) {
         renderConfigureForm(configPanel, async () => {
             await refresh();
         });
+
+        const form = configPanel.querySelector('#form-configure');
+        const submitBtn = document.getElementById('btn-submit-configure');
+        if (form && submitBtn) {
+            submitBtn.classList.add('btn-primary');
+
+            const controlsGrid = document.createElement('div');
+            controlsGrid.className = 'controls-grid';
+
+            const buttonDefs = [
+                { id: 'btn-request', text: 'Request' },
+                { id: 'btn-release', text: 'Release' },
+                { id: 'btn-step', text: 'Step' },
+                { id: 'btn-detect', text: 'Detect' },
+                { id: 'btn-recover', text: 'Recover' },
+                { id: 'btn-reset', text: 'Reset' }
+            ];
+
+            buttonDefs.forEach(b => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.id = b.id;
+                btn.textContent = b.text;
+                btn.className = 'btn-primary';
+                controlsGrid.appendChild(btn);
+            });
+
+            const actionGroup = submitBtn.closest('.form-group');
+            if (actionGroup) {
+                form.insertBefore(controlsGrid, actionGroup);
+            } else {
+                form.appendChild(controlsGrid);
+            }
+        }
     }
     renderDetectRecoverPanel(null, refresh);
     renderHistoryPanel([], null, jump);

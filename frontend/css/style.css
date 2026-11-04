@@ -297,7 +297,7 @@ a:focus-visible,
 
 .graph-column {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto auto;
+  grid-template-rows: minmax(0, 1fr) auto;
   gap: 0.35rem;
   height: 100%;
   min-height: 0;
@@ -318,23 +318,6 @@ a:focus-visible,
   text-align: center;
   margin: 0;
   padding: 0;
-}
-
-.graph-control-row {
-  flex-shrink: 0;
-  width: 100%;
-  display: flex;
-  flex-wrap: nowrap;
-  justify-content: space-between;
-  gap: 0.2rem;
-  margin: 0;
-  padding: 0;
-}
-
-.graph-control-row button {
-  min-width: 0;
-  padding: 0.35rem 0.3rem;
-  font-size: 0.75rem;
 }
 
 .graph-controls {
@@ -655,7 +638,7 @@ a:focus-visible,
   width: 52px;
 }
 
-#form-configure button[type="button"] {
+#form-configure button[type="button"]:not(.btn-primary) {
   align-self: flex-start;
   font-size: 0.72rem;
   font-weight: 500;
@@ -666,7 +649,7 @@ a:focus-visible,
   border-radius: var(--radius-md);
 }
 
-#form-configure button[type="button"]:hover {
+#form-configure button[type="button"]:not(.btn-primary):hover {
   border-color: var(--color-text);
   background-color: #f8fafc;
 }
@@ -691,28 +674,62 @@ a:focus-visible,
   accent-color: var(--color-focus);
 }
 
-/* Primary Configure Button in Tiktokenizer Style */
-#btn-submit-configure {
+.controls-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
   width: 100%;
+  box-sizing: border-box;
+}
+
+.controls-grid .btn-primary {
+  width: 100%;
+}
+
+/* Primary Button Style (matching Configure button) */
+.btn-primary,
+#btn-submit-configure {
   background-color: #0f172a;
   color: #ffffff;
-  border: 1px solid #0f172a;
+  border: none;
+  font-family: var(--font-sans);
   font-weight: 600;
   font-size: 0.8125rem;
+  line-height: 1.25;
   padding: 0.38rem 0.75rem;
   border-radius: var(--radius-md);
   cursor: pointer;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+  box-sizing: border-box;
 }
 
-#btn-submit-configure:hover {
+.btn-primary:hover:not(:disabled),
+#btn-submit-configure:hover:not(:disabled) {
   background-color: #1e293b;
-  border-color: #1e293b;
 }
 
-#btn-submit-configure:active {
+.btn-primary:active:not(:disabled),
+#btn-submit-configure:active:not(:disabled) {
   background-color: #334155;
+}
+
+.btn-primary:focus,
+.btn-primary:focus-visible,
+#btn-submit-configure:focus,
+#btn-submit-configure:focus-visible {
+  outline: 2px solid #222222;
+  outline-offset: 2px;
+}
+
+.btn-primary:disabled,
+#btn-submit-configure:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#btn-submit-configure {
+  width: 100%;
 }
 
 .error-line {
@@ -842,7 +859,4 @@ a:focus-visible,
   .graph-canvas {
     min-height: 0;
   }
-
-  .graph-control-row { gap: 0.1rem; }
-  .graph-control-row button { padding-inline: 0.15rem; font-size: 0.65rem; }
 }
