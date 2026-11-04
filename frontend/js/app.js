@@ -13,7 +13,6 @@ import {
 } from './api/endpoints.js';
 import { renderProcessPanel } from './panels/process-panel.js';
 import { renderResourcePanel } from './panels/resource-panel.js';
-import { renderStatusLine } from './panels/status-line.js';
 import { renderConfigureForm } from './panels/configure-form.js';
 import { renderActionPanel } from './panels/action-panel.js';
 import { renderDetectRecoverPanel } from './panels/detect-recover-panel.js';
@@ -64,7 +63,6 @@ export async function jump(seq) {
         const jumpedState = (data && data.state) ? data.state : data;
         currentSeq = seq;
 
-        renderStatusLine(jumpedState);
         renderProcessPanel(jumpedState);
         renderResourcePanel(jumpedState);
         renderGraph(jumpedState);
@@ -84,7 +82,6 @@ export async function jump(seq) {
 export async function refresh() {
     try {
         const result = await getState();
-        renderStatusLine(result);
         renderProcessPanel(result);
         renderResourcePanel(result);
         renderGraph(result);
@@ -102,10 +99,6 @@ export async function refresh() {
         updateHistoryButtons(currentEvents, currentSeq);
     } catch (err) {
         if (err.code === 'NO_SCENARIO') {
-            const statusLine = document.getElementById('status-line');
-            if (statusLine) {
-                statusLine.textContent = 'No scenario loaded';
-            }
             renderProcessPanel(null);
             renderResourcePanel(null);
             renderGraph(null);
@@ -116,10 +109,6 @@ export async function refresh() {
             renderHistoryPanel([], null, jump);
             updateHistoryButtons([], null);
         } else {
-            const statusLine = document.getElementById('status-line');
-            if (statusLine) {
-                statusLine.textContent = err.message || err.code || 'An error occurred';
-            }
             renderActionPanel(null, refresh);
             renderDetectRecoverPanel(null, refresh);
             currentSeq = null;
@@ -153,6 +142,28 @@ function setupHistoryControls() {
 }
 
 export function init() {
+    const historyOverlay = document.getElementById('history-overlay');
+    const historyButton = document.getElementById('btn-history');
+    const historyClose = document.getElementById('btn-history-close');
+    historyButton?.addEventListener('click', () => {
+        historyOverlay.hidden = false;
+        historyClose.focus();
+    });
+    historyClose?.addEventListener('click', () => {
+        historyOverlay.hidden = true;
+        historyButton.focus();
+    });
+    historyOverlay?.addEventListener('click', (event) => {
+        if (event.target === historyOverlay) historyClose.click();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && historyOverlay && !historyOverlay.hidden) historyClose.click();
+    });
+
+    document.getElementById('btn-configure')?.addEventListener('click', () => {
+        document.getElementById('form-configure')?.requestSubmit();
+    });
+
     const configPanel = document.getElementById('configure-panel');
     if (configPanel) {
         renderConfigureForm(configPanel, async () => {

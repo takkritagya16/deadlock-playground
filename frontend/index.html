@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Deadlock Visualisation and Recovery Simulator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Titillium+Web:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -11,36 +14,34 @@
   <div class="app-container">
     <header class="app-header">
       <h1>Deadlock Visualisation and Recovery Simulator</h1>
+      <button type="button" id="btn-history">Event History</button>
     </header>
 
-    <div class="control-bar" role="toolbar" aria-label="Simulator Controls">
-      <button type="button" id="btn-configure">Configure</button>
-      <button type="button" id="btn-request">Request</button>
-      <button type="button" id="btn-release">Release</button>
-      <button type="button" id="btn-step">Step</button>
-      <button type="button" id="btn-detect">Detect</button>
-      <button type="button" id="btn-recover">Recover</button>
-      <button type="button" id="btn-reset">Reset</button>
-    </div>
-
     <main class="main-area">
-      <section id="graph" class="graph-region" tabindex="-1">
-        <div class="panel-header">
-          <h2>Resource Allocation Graph</h2>
-        </div>
-        <div class="graph-canvas" aria-label="Graph display area">
-          <p class="placeholder-text">Graph visualization will be rendered here.</p>
-        </div>
+      <section id="configure-panel" class="panel">
+        <div class="panel-header"><h2>Configure Scenario</h2></div>
+        <div class="panel-content"></div>
       </section>
 
-      <aside class="side-column">
-        <section id="configure-panel" class="panel">
-          <div class="panel-header">
-            <h2>Configure Scenario</h2>
+      <div class="graph-column">
+        <section id="graph" class="graph-region" tabindex="-1" aria-label="Resource Allocation Graph">
+          <div class="graph-canvas" aria-label="Graph display area">
+            <p class="placeholder-text">Graph visualization will be rendered here.</p>
           </div>
-          <div class="panel-content"></div>
         </section>
+        <div class="graph-caption">Resource Allocation Graph</div>
+        <div class="graph-control-row" role="toolbar" aria-label="Simulator Controls">
+          <button type="button" id="btn-configure">Configure</button>
+          <button type="button" id="btn-request">Request</button>
+          <button type="button" id="btn-release">Release</button>
+          <button type="button" id="btn-step">Step</button>
+          <button type="button" id="btn-detect">Detect</button>
+          <button type="button" id="btn-recover">Recover</button>
+          <button type="button" id="btn-reset">Reset</button>
+        </div>
+      </div>
 
+      <aside class="side-column">
         <section id="action-panel" class="panel">
           <div class="panel-header">
             <h2>Actions</h2>
@@ -75,22 +76,19 @@
       </aside>
     </main>
 
-    <div id="status-line" class="status-line" role="status" aria-live="polite">
-      Ready. Load or configure a scenario to begin.
-    </div>
-
-    <section id="history-panel" class="panel history-region">
-      <div class="panel-header">
-        <h2>Event History</h2>
-        <div class="history-controls">
-          <button type="button" id="btn-step-back">Step back</button>
-          <button type="button" id="btn-step-forward">Step forward</button>
+    <div id="history-overlay" class="history-overlay" hidden>
+      <section id="history-panel" class="panel history-region" role="dialog" aria-modal="true" aria-labelledby="history-heading">
+        <div class="panel-header">
+          <h2 id="history-heading">Event History</h2>
+          <div class="history-controls">
+            <button type="button" id="btn-step-back">Step back</button>
+            <button type="button" id="btn-step-forward">Step forward</button>
+            <button type="button" id="btn-history-close" aria-label="Close Event History">Close</button>
+          </div>
         </div>
-      </div>
-      <div class="panel-content">
-        <p class="placeholder-text">No events recorded yet.</p>
-      </div>
-    </section>
+        <div class="panel-content"><p class="placeholder-text">No events recorded yet.</p></div>
+      </section>
+    </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
